@@ -17,3 +17,12 @@ Source for the claude.ai Dashboard artifact that replaces the static
 - `index.html` — page markup and styles.
 - `calcs.js` — loader (unzips the sheet's Excel export, reads every month tab) and the BOT 1/2/3 calculations.
 - `app.js` — filters (month, day/week, step through periods), page navigation, charts and tables.
+
+## Data refresh (no Google login needed by viewers)
+Viewers read a rows file attached to the dashboard, not the sheet. A scheduled routine refreshes it:
+1. Google Drive `download_file_content` with fileId `1waJ54P4ciUFPocZtZ6BEfqnsGKYbDn345ww5Nl_QHGs`,
+   exportMimeType `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` (the large
+   result is saved to a tool-results file).
+2. `node dashboard/refresh.mjs <that file> <out>/audit_rows.json` (uses `sheet-reader.js`).
+3. Upload `audit_rows.json` to the artifact's asset store, then update `datasets/audits`:
+   `source.url` = the new `/_blob/<id>`, `updated` = now, `lastAttempt`; delete the previous blob.

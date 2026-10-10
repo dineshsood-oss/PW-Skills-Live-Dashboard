@@ -145,7 +145,7 @@
       mark(e, 'scope_summary', k, where('scope', scope));
       if (!row) { e.textContent = '—'; return; }
       const v = row[k];
-      e.textContent = v == null ? '—' : /pct/.test(k) ? fPct(v) : k === 'avg_no' || k === 'qa_score' ? f1(v) : typeof v === 'number' ? fInt(v) : v;
+      e.textContent = v == null ? '—' : /pct/.test(k) ? fPct(v) : k === 'avg_no' || k === 'qa_score' || k === 'avg_talk_min' ? f1(v) : typeof v === 'number' ? fInt(v) : v;
     });
     $$('[data-d]', root).forEach((e) => {
       const k = e.dataset.d;
@@ -354,7 +354,7 @@
   /* ---------- counsellors ---------- */
   $('#lcSearch').addEventListener('input', (e) => { ui.lcQ = e.target.value.toLowerCase(); draw(); });
   $('#lcChips').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; ui.lcF = b.dataset.f; draw(); });
-  $('#lcTable thead').addEventListener('click', (e) => { const b = e.target.closest('button[data-sort]'); if (!b) return; const k = b.dataset.sort; ui.lcSort = [k, ui.lcSort[0] === k ? -ui.lcSort[1] : (['lc_owner', 'worst_param'].includes(k) ? 1 : -1)]; draw(); });
+  $('#lcTable thead').addEventListener('click', (e) => { const b = e.target.closest('button[data-sort]'); if (!b) return; const k = b.dataset.sort; ui.lcSort = [k, ui.lcSort[0] === k ? -ui.lcSort[1] : (['lc_owner', 'manager', 'worst_param'].includes(k) ? 1 : -1)]; draw(); });
   const ragBar = (r) => {
     const b = el('div', 'qa-ragbar'); b.title = ['red', 'amber', 'orange', 'green'].map((k) => `${RAG_NAME[k]} ${r[k]}`).join(' · ');
     ['red', 'amber', 'orange', 'green'].forEach((k) => { if (!r[k]) return; const s = el('span'); s.style.background = RAG[k]; s.style.flex = r[k]; b.append(s); });
@@ -363,7 +363,7 @@
   const drawCounsellors = (lcs) => {
     $$('#lcChips button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.f === ui.lcF)));
     const [k, dir] = ui.lcSort;
-    const rows = lcs.filter((r) => (!ui.lcQ || r.lc_owner.toLowerCase().includes(ui.lcQ)) && (ui.lcF === 'all' || (ui.lcF === 'esc' ? r.escalate : r.red > 0)))
+    const rows = lcs.filter((r) => (!ui.lcQ || `${r.lc_owner} ${r.manager}`.toLowerCase().includes(ui.lcQ)) && (ui.lcF === 'all' || (ui.lcF === 'esc' ? r.escalate : r.red > 0)))
       .sort((a, b) => (typeof a[k] === 'string' ? a[k].localeCompare(b[k]) : a[k] - b[k]) * dir || b.audits - a.audits);
     $$('#lcTable th').forEach((th) => { const b = th.querySelector('button'); th.setAttribute('aria-sort', b && b.dataset.sort === k ? (dir > 0 ? 'ascending' : 'descending') : 'none'); });
     const tb = $('#lcTable tbody');
@@ -372,11 +372,11 @@
       const name = el('td', null, r.lc_owner);
       if (r.escalate) name.append(' ', el('span', 'qa-pill esc', 'escalate'));
       const mix = el('td'); mix.append(ragBar(r));
-      tr.append(name, el('td', 'num', fInt(r.audits)), el('td', 'num', fInt(r.total_no)), el('td', 'num', f1(r.avg_no)), mix, el('td', 'num', fInt(r.flagged)), el('td', 'wrap', r.worst_param));
+      tr.append(name, el('td', null, r.manager || '—'), el('td', 'num', fInt(r.audits)), el('td', 'num', fInt(r.total_no)), el('td', 'num', f1(r.avg_no)), mix, el('td', 'num', fInt(r.fatal)), el('td', 'num', fInt(r.flagged)), el('td', 'wrap', r.worst_param));
       tr.addEventListener('click', () => goAlarms({ alLc: r.lc_owner }));
       return tr;
     }));
-    if (!rows.length) { const tr = el('tr'); const td = el('td', 'qa-empty', 'No counsellors match.'); td.colSpan = 7; tr.append(td); tb.append(tr); }
+    if (!rows.length) { const tr = el('tr'); const td = el('td', 'qa-empty', 'No counsellors match.'); td.colSpan = 9; tr.append(td); tb.append(tr); }
   };
 
   /* ---------- alarms ---------- */
@@ -395,7 +395,7 @@
     if (ui.alLc && !names.includes(ui.alLc)) ls.append(new Option(ui.alLc, ui.alLc));
     ls.value = ui.alLc;
     const rows = inScope.filter((a) => (!ui.alLc || a.lc_owner === ui.alLc) && (!ui.alT || a.triggers.includes(ui.alT)) && (!ui.alR || a.rag === ui.alR)
-      && (!ui.alQ || [a.lc_owner, a.reg_number, a.course_enrolled, a.remarks, a.qa_name].join(' ').toLowerCase().includes(ui.alQ)))
+      && (!ui.alQ || [a.lc_owner, a.reg_number, a.course_enrolled, a.remarks, a.qa_name, a.manager, a.manager_remark].join(' ').toLowerCase().includes(ui.alQ)))
       .sort((a, b) => (b.severity === 'high') - (a.severity === 'high') || b.reasons.length - a.reasons.length || b.no - a.no || b.date.localeCompare(a.date));
     $('#alShown').textContent = `${fInt(rows.length)} case${rows.length === 1 ? '' : 's'} shown`;
     const box = $('#alarmList');
@@ -405,12 +405,17 @@
       const top = el('div', 'a-top'); const left = el('div');
       const who = el('div', 'a-who'); who.append(mark(el('span', null, a.lc_owner), 'audits_scored', 'lc_owner', w), el('small', null, ` — reg #${a.reg_number || '—'}`));
       const meta = el('div', 'a-meta');
-      meta.append(`${fmtDate(a.date)} · QA: ${a.qa_name || '—'} · ${a.course_enrolled || '—'}${a.course_type ? ` (${a.course_type})` : ''} · NO: `, mark(el('b', 'n', String(a.no)), 'audits_scored', 'no', w), ` of ${a.applicable} applicable · tab ${a.tab} row ${a.sheet_row}`);
+      const tt = a.talk_time_sec == null ? '' : ` · TT ${Math.floor(a.talk_time_sec / 60)}:${String(a.talk_time_sec % 60).padStart(2, '0')}`;
+      meta.append(`Enrolled ${fmtDate(a.date)}${a.audited_date ? ` · audited ${fmtDate(a.audited_date)}` : ''} · QA: ${a.qa_name || '—'}${a.manager ? ` · Manager: ${a.manager}` : ''}${tt} · ${a.course_enrolled || '—'}${a.course_type ? ` (${a.course_type})` : ''} · NO: `, mark(el('b', 'n', String(a.no)), 'audits_scored', 'no', w), ` of ${a.applicable} applicable · tab ${a.tab} row ${a.sheet_row}`);
       left.append(who, meta);
-      top.append(left, mark(el('span', 'qa-pill ' + a.rag, RAG_NAME[a.rag]), 'audits_scored', 'rag', w));
+      const pills = el('span');
+      if (a.fatal) pills.append(mark(el('span', 'qa-pill esc', 'FATAL'), 'audits_scored', 'fatal', w), ' ');
+      pills.append(mark(el('span', 'qa-pill ' + a.rag, RAG_NAME[a.rag]), 'audits_scored', 'rag', w));
+      top.append(left, pills);
       const ul = el('ul'); a.reasons.forEach((r) => ul.append(el('li', null, r)));
       c.append(top, ul);
       if (a.remarks) c.append(el('div', 'a-remark', `QA remark: “${a.remarks}”`));
+      if (a.manager_remark) c.append(el('div', 'a-remark', `Manager remark: “${a.manager_remark}”`));
       return c;
     }));
     if (!rows.length) box.append(el('div', 'qa-empty', inScope.length ? 'No flagged cases match these filters.' : 'No alarming cases in this period.'));
@@ -520,7 +525,7 @@
     const esc = lcs.filter((r) => r.escalate);
     goal('Goal 5 — Escalation per fatal / defaulter policy', true,
       esc.length ? [sum('escalations', fInt(row.escalations)), ' counsellor(s) showing repeat RED ratings in this period.'] : ['No repeat-RED counsellors in this period — monitor as new audits land.'],
-      esc.map((r) => { const w = where('row_id', r.row_id); return [mark(el('b', null, r.lc_owner), 'scope_counsellors', 'lc_owner', w), ' — ', num('scope_counsellors', 'red', w, fInt(r.red)), ' RED / ', num('scope_counsellors', 'audits', w, fInt(r.audits)), ' audits. Warning 1 → Warning 2 → RTHR (refer to HR) if the next audit repeats.']; }));
+      esc.map((r) => { const w = where('row_id', r.row_id); return [mark(el('b', null, r.lc_owner), 'scope_counsellors', 'lc_owner', w), r.manager ? ` (${r.manager})` : '', ' — ', num('scope_counsellors', 'red', w, fInt(r.red)), ' RED / ', num('scope_counsellors', 'audits', w, fInt(r.audits)), ' audits', ...(r.fatal ? [', ', num('scope_counsellors', 'fatal', w, fInt(r.fatal)), ' FATAL'] : []), '. Warning 1 → Warning 2 → RTHR (refer to HR) if the next audit repeats.']; }));
     goal('Goal 6 — Tracking improvement', false,
       ['Baseline QA score for this period is ', sum('qa_score', row.qa_score == null ? '—' : f1(row.qa_score)), '/10', ...(row.d_qa_score == null ? ['.'] : [' (', sum('d_qa_score', d3.format('+.1f')(row.d_qa_score)), ` vs ${row.prev_label}).`]), ' Re-check after each D-1 upload and log the reading in the POA workbook at each formal review.'], []);
   };
@@ -535,9 +540,12 @@
     if (all) {
       const now = new Date(); const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
       const yIso = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
-      const ok = all.latest_date >= yIso;
+      const last = all.latest_audited || all.latest_date;
+      const ok = last >= yIso;
       badge.classList.add(ok ? 'ok' : 'warn');
-      badge.textContent = ok ? 'D-1 audits uploaded' : `Awaiting D-1 upload (${fmtDate(yIso)})`;
+      badge.textContent = ok ? 'D-1 audits uploaded' : `Awaiting D-1 upload (last audited ${fmtDate(last)})`;
+      const la = $('#latestAudited');
+      la.textContent = all.latest_audited ? fmtDate(all.latest_audited) : '—';
     }
     const take = $('#takeaway');
     take.replaceChildren();
@@ -546,7 +554,7 @@
     take.append(`${row.label}: `, mark(el('b', 'n', fInt(row.audits)), 'scope_summary', 'audits', w), ' audits, ',
       mark(el('b', 'n', fPct(row.risk_pct)), 'scope_summary', 'risk_pct', w), ' at RED/AMBER, QA score ',
       mark(el('b', 'n', row.qa_score == null ? '—' : f1(row.qa_score)), 'scope_summary', 'qa_score', w), '/10. Biggest driver: ',
-      mark(el('b', null, row.top_cause), 'scope_summary', 'top_cause', w), '.');
+      mark(el('b', null, row.top_cause), 'scope_summary', 'top_cause', w), '.', ...(row.fatal ? [' ', mark(el('b', 'n', fInt(row.fatal)), 'scope_summary', 'fatal', w), ' call(s) marked FATAL/Concerning.'] : []));
     const ac = $('#alarmCount'); ac.textContent = fInt(row.flagged); ac.dataset.where = w;
   };
 

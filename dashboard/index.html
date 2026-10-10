@@ -159,7 +159,7 @@
     </div>
     <div class="qa-fresh">
       <span id="d1badge" class="qa-badge dash-skeleton">Checking D-1 upload</span>
-      <span>Latest audit: <b data-source="scope_summary" data-field="latest_date" data-where="scope=all|all|all" id="latest">—</b> · <a href="https://docs.google.com/spreadsheets/d/1waJ54P4ciUFPocZtZ6BEfqnsGKYbDn345ww5Nl_QHGs/edit" target="_blank" rel="noopener">Open audit sheet ↗</a></span>
+      <span>Last audited: <b data-source="scope_summary" data-field="latest_audited" data-where="scope=all|all|all" id="latestAudited">—</b> · latest enrolment: <b data-source="scope_summary" data-field="latest_date" data-where="scope=all|all|all" id="latest">—</b> · <a href="https://docs.google.com/spreadsheets/d/1waJ54P4ciUFPocZtZ6BEfqnsGKYbDn345ww5Nl_QHGs/edit" target="_blank" rel="noopener">Open audit sheet ↗</a></span>
     </div>
   </header>
 
@@ -194,7 +194,7 @@
   <section class="qa-page" id="overview" role="tabpanel" aria-labelledby="tab-overview">
     <div class="qa-kpis" id="ovKpis">
       <div class="qa-kpi"><span class="k-label">Audits</span><span class="k-num dash-skeleton" data-k="audits">—</span><span class="k-delta" data-d="d_audits"></span></div>
-      <div class="qa-kpi"><span class="k-label">Parameters marked NO</span><span class="k-num dash-skeleton" data-k="total_no">—</span><span class="k-delta">of 24 checked per audit</span></div>
+      <div class="qa-kpi"><span class="k-label">Parameters marked NO</span><span class="k-num dash-skeleton" data-k="total_no">—</span><span class="k-delta">across all parameters audited</span></div>
       <div class="qa-kpi"><span class="k-label">Avg NO per audit</span><span class="k-num dash-skeleton" data-k="avg_no">—</span><span class="k-delta" data-d="d_avg_no"></span></div>
       <div class="qa-kpi warn"><span class="k-label">Audits at RED / AMBER</span><span class="k-num dash-skeleton" data-k="risk_pct">—</span><span class="k-delta" data-d="d_risk_pct"></span></div>
       <div class="qa-kpi"><span class="k-label">QA score (/10)</span><span class="k-num dash-skeleton" data-k="qa_score">—</span><span class="k-delta" data-d="d_qa_score"></span></div>
@@ -282,17 +282,19 @@
       <h2>Counsellor-level audit summary</h2>
       <p class="c-note">Every counsellor (LC owner) audited in the period, worst average NO first. Click a row to see that counsellor’s flagged cases.</p>
       <div class="qa-toolbar">
-        <input type="search" id="lcSearch" placeholder="Search counsellor…" aria-label="Search counsellor">
+        <input type="search" id="lcSearch" placeholder="Search counsellor or manager…" aria-label="Search counsellor">
         <span class="qa-chips" id="lcChips"><button class="qa-chip" data-f="all" aria-pressed="true">All</button><button class="qa-chip" data-f="esc" aria-pressed="false">Escalation list</button><button class="qa-chip" data-f="red" aria-pressed="false">Has a RED audit</button></span>
       </div>
       <div class="qa-tablebox">
         <table id="lcTable" data-source="scope_counsellors" data-row-key="row_id">
           <thead><tr>
             <th data-field="lc_owner"><button data-sort="lc_owner">Counsellor</button></th>
+            <th data-field="manager"><button data-sort="manager">Manager</button></th>
             <th class="num" data-field="audits"><button data-sort="audits">Audits</button></th>
             <th class="num" data-field="total_no"><button data-sort="total_no">Total NO</button></th>
             <th class="num" data-field="avg_no"><button data-sort="avg_no">Avg NO / audit</button></th>
             <th data-field="red"><button data-sort="risk_share">Risk mix</button></th>
+            <th class="num" data-field="fatal"><button data-sort="fatal">FATAL</button></th>
             <th class="num" data-field="flagged"><button data-sort="flagged">Flagged</button></th>
             <th data-field="worst_param"><button data-sort="worst_param">Most-missed parameter</button></th>
           </tr></thead>
@@ -307,16 +309,19 @@
     <div class="qa-kpis">
       <div class="qa-kpi warn"><span class="k-label">Flagged cases</span><span class="k-num dash-skeleton" data-k="flagged">—</span><span class="k-delta">needing QA / TL review</span></div>
       <div class="qa-kpi"><span class="k-label">% of audited cases flagged</span><span class="k-num dash-skeleton" data-k="flagged_pct">—</span><span class="k-delta" data-d="d_flagged_pct"></span></div>
+      <div class="qa-kpi warn"><span class="k-label">FATAL / Concerning calls</span><span class="k-num dash-skeleton" data-k="fatal">—</span><span class="k-delta">as marked by QA</span></div>
+      <div class="qa-kpi"><span class="k-label">Avg talk time (min)</span><span class="k-num dash-skeleton" data-k="avg_talk_min">—</span><span class="k-delta">TT column</span></div>
       <div class="qa-kpi"><span class="k-label">Most common trigger</span><span class="k-num small dash-skeleton" data-k="top_trigger">—</span></div>
     </div>
     <div class="qa-card accent-red" id="alarmCard">
       <h2>BOT 2 — alarming observations <span class="qa-tag">compliance · mis-selling · trust</span></h2>
-      <p class="c-note">Cases with a RED/AMBER score, a missed critical parameter (placement marks threshold, level packages, 5-opportunity cap, loan tenure, CIBIL impact) or risk language in the QA remark. Review these first.</p>
+      <p class="c-note">Cases the QA marked FATAL/Concerning, or with a RED/AMBER score, a missed critical parameter (placement marks threshold, level packages, 5-opportunity cap, loan tenure, CIBIL impact) or risk language in the QA remark. Review these first.</p>
       <div class="qa-toolbar">
         <input type="search" id="alSearch" placeholder="Search name, reg #, course, remark…" aria-label="Search alarms">
         <select id="alLc" aria-label="Counsellor"><option value="">All counsellors</option></select>
         <span class="qa-chips" id="alTrig">
           <button class="qa-chip" data-t="" aria-pressed="true">All triggers</button>
+          <button class="qa-chip" data-t="Marked FATAL/Concerning" aria-pressed="false">FATAL</button>
           <button class="qa-chip" data-t="Low audit score (RED/AMBER)" aria-pressed="false">Low score</button>
           <button class="qa-chip" data-t="Critical parameter missed" aria-pressed="false">Critical miss</button>
           <button class="qa-chip" data-t="Risk language in remarks" aria-pressed="false">Risk remark</button>
@@ -372,7 +377,7 @@
     </div>
   </section>
 
-  <p class="qa-foot" id="foot">Source: one tab per month in the Google Sheet (e.g. <i>Oct-2026</i>); the QA team appends the previous day’s (D-1) audits each morning and the dashboard reads every tab live when it opens or is refreshed. New month → add a new tab with the same header row.</p>
+  <p class="qa-foot" id="foot">Source: one tab per month in the Google Sheet (e.g. <i>Oct-2026</i>), in the QA team’s audit format (merged group / parameter header rows are read automatically). The team appends the previous day’s (D-1) audits each morning; the dashboard reads every tab live when opened or refreshed. Periods follow the Enrolment date; the D-1 check uses Audited Date. New month → copy the last tab, rename it, clear the audit rows.</p>
 </div>
 
 <script src="calcs.js"></script>

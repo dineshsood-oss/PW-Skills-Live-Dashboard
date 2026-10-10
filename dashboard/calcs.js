@@ -44,13 +44,18 @@ dash.loader('audits', {
     const sheets = [];
     ((await file('xl/workbook.xml')) || '').replace(/<sheet\b([^>]*)\/?>/g, (m, s) => { const r = attrs(s); sheets.push({ name: r.name, target: rels[r['r:id']] }); });
 
+    const norm = (h) => String(h).toLowerCase().replace(/\s+/g, ' ').trim();
     const FIXED = {
-      'enrolment date': 'enrolment_date', 'enrollment date': 'enrolment_date', 'date': 'enrolment_date', 'audit date': 'enrolment_date',
-      'reg number': 'reg_number', 'registration number': 'reg_number', 'reg no': 'reg_number',
+      'enrolment date': 'enrolment_date', 'enrollment date': 'enrolment_date', 'date of enrolment': 'enrolment_date',
+      'registered number': 'reg_number', 'reg number': 'reg_number', 'registration number': 'reg_number', 'reg no': 'reg_number',
       'final fees': 'final_fees', 'lc owner': 'lc_owner', 'counsellor': 'lc_owner', 'counsellor name': 'lc_owner',
-      'qa name': 'qa_name', 'course enrolled': 'course_enrolled', 'course type': 'course_type',
-      'ztp category': 'ztp_category', 'remarks': 'remarks', 'qa remarks': 'remarks',
+      'qa name': 'qa_name', 'audited date': 'audited_date', 'audit date': 'audited_date', 'tt': 'talk_time', 'talk time': 'talk_time',
+      'manager mail': 'manager', 'manager': 'manager', 'manager name': 'manager',
+      'course enrolled': 'course_enrolled', 'course type': 'course_type',
+      'ztp category': 'ztp_category', 'remarks': 'remarks', 'qa remarks': 'remarks', 'remarks qa': 'remarks',
+      'manager remark': 'manager_remark', 'manager remarks': 'manager_remark', 'fatal/concerning': 'fatal', 'fatal / concerning': 'fatal',
     };
+    const keyOf = (h) => { const n = norm(h); return FIXED[n] || (n.startsWith('course type') ? 'course_type' : null); };
     const MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
     const pad = (n) => String(n).padStart(2, '0');
     const toDate = (v, numeric) => {
@@ -68,10 +73,16 @@ dash.loader('audits', {
       if (m) return `${m[3].length === 2 ? '20' + m[3] : m[3]}-${pad(m[2])}-${pad(m[1])}`;
       return null;
     };
+    const toSecs = (v, numeric) => {
+      if (v == null || v === '') return null;
+      if (numeric) return Math.round(Number(v) * 86400);
+      const m = String(v).trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      return m ? (m[3] != null ? +m[1] * 3600 + +m[2] * 60 + +m[3] : +m[1] * 60 + +m[2]) : null;
+    };
     const colIndex = (ref) => { let n = 0; for (const ch of ref.replace(/\d+/g, '')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
 
     const rows = [];
-    const columns = ['tab', 'sheet_row', 'enrolment_date', 'reg_number', 'final_fees', 'lc_owner', 'qa_name', 'course_enrolled', 'course_type', 'ztp_category', 'remarks'];
+    const columns = ['tab', 'sheet_row', 'enrolment_date', 'audited_date', 'reg_number', 'final_fees', 'manager', 'lc_owner', 'qa_name', 'talk_time_sec', 'course_enrolled', 'course_type', 'ztp_category', 'fatal', 'remarks', 'manager_remark'];
     for (const sh of sheets) {
       if (!sh.target) continue;
       const path = sh.target.startsWith('/') ? sh.target.slice(1) : 'xl/' + sh.target.replace(/^\.\//, '');
@@ -94,12 +105,23 @@ dash.loader('audits', {
         });
         grid.push({ rnum, cells });
       });
-      const hi = grid.slice(0, 5).findIndex((r) => r.cells.some((c) => c && c.v && FIXED[String(c.v).trim().toLowerCase().replace(/\s+/g, ' ')] === 'enrolment_date'));
-      if (hi < 0) continue;
-      const head = grid[hi].cells.map((c) => (c && c.v != null ? String(c.v).trim() : ''));
-      const keys = head.map((h) => FIXED[h.toLowerCase().replace(/\s+/g, ' ')] || h);
-      keys.forEach((k) => { if (k && !columns.includes(k)) columns.push(k); });
-      grid.slice(hi + 1).forEach((r) => {
+      // Headers can span several merged rows (group / sub-group / parameter): a merged cell holds its text
+      // only in its top-left cell, so each column is named by the lowest header text above the first data row.
+      const top = grid.slice(0, 8);
+      let dateCol = -1;
+      top.some((r) => r.cells.some((c, i) => { if (c && c.v != null && keyOf(c.v) === 'enrolment_date') { dateCol = i; return true; } return false; }));
+      if (dateCol < 0) continue;
+      let first = grid.findIndex((r, i) => i < 12 && r.cells[dateCol] && toDate(r.cells[dateCol].v, r.cells[dateCol].numeric));
+      if (first < 0) first = grid.findIndex((r) => r.cells.some((c) => c && c.v != null && keyOf(c.v) === 'enrolment_date')) + 1;
+      const width = Math.max(...grid.slice(0, first + 1).map((r) => r.cells.length));
+      const keys = [];
+      for (let i = 0; i < width; i++) {
+        let h = '';
+        for (let j = first - 1; j >= 0 && !h; j--) { const c = grid[j].cells[i]; if (c && c.v != null && String(c.v).trim()) h = String(c.v).replace(/\s+/g, ' ').trim(); }
+        keys[i] = h ? (keyOf(h) || h) : '';
+      }
+      keys.forEach((k) => { if (k && k !== 'talk_time' && !columns.includes(k)) columns.push(k); });
+      grid.slice(first).forEach((r) => {
         const o = { tab: sh.name, sheet_row: r.rnum };
         let filled = false;
         keys.forEach((k, i) => {
@@ -108,10 +130,10 @@ dash.loader('audits', {
           let v = c ? c.v : null;
           if (v != null && String(v).trim() === '') v = null;
           if (v != null) filled = true;
-          if (k === 'enrolment_date') v = toDate(v, c && c.numeric);
-          else if (k === 'final_fees') v = v == null || isNaN(Number(v)) ? null : Number(v);
-          else if (v != null) v = String(v).trim();
-          o[k] = v;
+          if (k === 'enrolment_date' || k === 'audited_date') o[k] = toDate(v, c && c.numeric);
+          else if (k === 'talk_time') o.talk_time_sec = toSecs(v, c && c.numeric);
+          else if (k === 'final_fees') { const n = v == null ? NaN : Number(String(v).replace(/[₹,\s]/g, '')); o[k] = isNaN(n) ? null : n; }
+          else o[k] = v == null ? null : String(v).trim();
         });
         if (filled && (o.enrolment_date || o.lc_owner)) rows.push(o);
       });
@@ -124,9 +146,10 @@ dash.loader('audits', {
 dash.calc('audits_scored', {
   inputs: ['audits'],
   title: 'Scored audits',
-  description: 'Each audit with its YES / NO / N/A counts, RAG band (the sheet’s ZTP Category, else NO-count bands 20+/15+/10+) and BOT 2 alarm triggers.',
+  description: 'Each audit with its YES / NO / N/A counts, RAG band (the sheet’s ZTP Category, else NO-count bands 20+/15+/10+), FATAL/Concerning mark and BOT 2 alarm triggers.',
   fn: (audits) => {
-    const FIXED = ['tab', 'sheet_row', 'enrolment_date', 'reg_number', 'final_fees', 'lc_owner', 'qa_name', 'course_enrolled', 'course_type', 'ztp_category', 'remarks'];
+    const FIXED = ['tab', 'sheet_row', 'enrolment_date', 'audited_date', 'reg_number', 'final_fees', 'manager', 'lc_owner', 'qa_name', 'talk_time_sec', 'course_enrolled', 'course_type', 'ztp_category', 'fatal', 'remarks', 'manager_remark'];
+    const norm = (h) => String(h).toLowerCase().replace(/\s+/g, ' ').trim();
     const CRITICAL = ['40% Marks for Placement Eligibility', 'Full time roll for all levels with level wise packages', 'only 5 oppurtunity over 3 months Pitched', 'Correct Loan Tenure Pitched', 'Cibil Impact if missed Pitched'];
     const RISK_WORDS = ['not disclosed', 'not covered', 'no call found', 'discrepancy', 'misled', 'mis-sold', 'mis sold', 'false', 'complaint', 'not clearly explained', 'should have been', 'not check', 'not checked', 'eligibility not check', 'missed', 'no proper', 'not informed', 'incorrect', 'wrong info'];
     const isoWeek = (s) => {
@@ -137,15 +160,21 @@ dash.calc('audits_scored', {
       return `${d.getUTCFullYear()}-W${String(wk).padStart(2, '0')}`;
     };
     const monday = (s) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString().slice(0, 10); };
+    // the 24 template parameters, so small header edits (spacing, case) still map to the same parameter
+    const CANON = ['Right Certification Pitched (Microsoft, NSDC)  For Offline- No Microsoft Certificate || For Online Basic- No Microsoft Certificate', 'Class Duration', 'Class Date and Timinigs', 'PW Talk', 'Right Instructors Pitched', 'Career Gap Eligibility Less than 2 yrs & Graduation Check', 'All 4Stages Briefed, Along with Marks and and weightage to each stage', 'AI Interview and Human Led interview', 'Attendence 60% For Certification', '40% Marks for Placement Eligibility', 'Remedial test', 'Readiness Scores of all three level', 'Internships of all three level with upto Stinpends', 'Full time roll for all levels with level wise packages', 'Job nature of all levels', 'Improving your Rediness Score Pitched', 'only 5 oppurtunity over 3 months Pitched', 'Payment Type', 'DP Pitched', 'Correct DP Pitched', 'Correct Loan Tenure Pitched', 'Cibil Impact if missed Pitched', '30 Calender day refund valid pitched', '10K non refundable regeistration fee'];
+    const canon = {};
+    CANON.forEach((c) => { canon[norm(c)] = c; });
     const params = [];
     audits.forEach((r) => Object.keys(r).forEach((k) => { if (!FIXED.includes(k) && !params.includes(k)) params.push(k); }));
+    const nameOf = {};
+    params.forEach((k) => { nameOf[k] = canon[norm(k)] || (norm(k).startsWith('right certification pitched') ? CANON[0] : k); });
     return audits.filter((r) => r.enrolment_date).map((r) => {
       const answers = {};
       let no = 0, yes = 0, na = 0;
       params.forEach((p) => {
         const v = r[p] == null ? '' : String(r[p]).trim();
         const u = v.toUpperCase();
-        answers[p] = u === 'NO' || u === 'YES' ? u : (u === 'NA' || u === 'N/A' ? 'NA' : v);
+        answers[nameOf[p]] = u === 'NO' || u === 'YES' ? u : (u === 'NA' || u === 'N/A' ? 'NA' : v);
         if (u === 'NO') no++; else if (u === 'YES') yes++; else if (u === 'NA' || u === 'N/A') na++;
       });
       const z = String(r.ztp_category || '').trim().toLowerCase();
@@ -159,17 +188,20 @@ dash.calc('audits_scored', {
       const remark = String(r.remarks || '').toLowerCase();
       const hit = RISK_WORDS.find((k) => remark.includes(k));
       if (hit) { reasons.push(`QA remark language flags risk (“…${hit}…”).`); triggers.push('Risk language in remarks'); }
+      const fatal = String(r.fatal || '').trim().toUpperCase() === 'YES';
+      if (fatal) { reasons.unshift('QA marked this call FATAL / Concerning.'); triggers.push('Marked FATAL/Concerning'); }
       const date = r.enrolment_date;
       const month = date.slice(0, 7);
       const week = isoWeek(date);
       return {
         audit_id: `${r.tab}#${r.sheet_row}`, tab: r.tab, sheet_row: r.sheet_row,
         date, month, week, week_start: monday(date),
-        lc_owner: r.lc_owner || '(blank)', qa_name: r.qa_name || '', reg_number: r.reg_number || '',
-        course_enrolled: r.course_enrolled || '', course_type: r.course_type || '', remarks: r.remarks || '',
+        lc_owner: r.lc_owner || '(blank)', manager: r.manager || '', qa_name: r.qa_name || '', reg_number: r.reg_number || '',
+        audited_date: r.audited_date || '', talk_time_sec: r.talk_time_sec == null ? null : r.talk_time_sec, fatal,
+        course_enrolled: r.course_enrolled || '', course_type: r.course_type || '', remarks: r.remarks || '', manager_remark: r.manager_remark || '',
         ztp_category: r.ztp_category || '', rag, no, yes, na, applicable: no + yes,
         critical_missed: critical.length, reasons, triggers, flagged: reasons.length > 0,
-        severity: (rag === 'red' || rag === 'amber' || critical.length) ? 'high' : (reasons.length ? 'medium' : ''),
+        severity: (fatal || rag === 'red' || rag === 'amber' || critical.length) ? 'high' : (reasons.length ? 'medium' : ''),
         answers,
         scopes: [`${month}|all|all`, `${month}|day|${date}`, `${month}|week|${week}`, 'all|all|all', `all|day|${date}`, `all|week|${week}`],
       };
@@ -306,15 +338,17 @@ dash.calc('scope_counsellors', {
     const m = new Map();
     audits_scored.forEach((a) => a.scopes.forEach((s) => {
       const k = `${s}~${a.lc_owner}`;
-      const t = m.get(k) || { row_id: k, scope: s, lc_owner: a.lc_owner, audits: 0, total_no: 0, red: 0, amber: 0, orange: 0, green: 0, flagged: 0, miss: {} };
-      t.audits++; t.total_no += a.no; t[a.rag]++; if (a.flagged) t.flagged++;
+      const t = m.get(k) || { row_id: k, scope: s, lc_owner: a.lc_owner, managers: {}, fatal: 0, audits: 0, total_no: 0, red: 0, amber: 0, orange: 0, green: 0, flagged: 0, miss: {} };
+      t.audits++; t.total_no += a.no; t[a.rag]++; if (a.flagged) t.flagged++; if (a.fatal) t.fatal++;
+      if (a.manager) t.managers[a.manager] = (t.managers[a.manager] || 0) + 1;
       Object.entries(a.answers).forEach(([p, v]) => { if (v === 'NO') t.miss[p] = (t.miss[p] || 0) + 1; });
       m.set(k, t);
     }));
     const rows = [...m.values()].map((t) => {
       const worst = Object.entries(t.miss).sort((a, b) => b[1] - a[1])[0];
       const l = worst ? (lib[worst[0]] || ['General', 'Review pitch-checklist adherence in the next call-calibration session.']) : ['', ''];
-      return { row_id: t.row_id, scope: t.scope, lc_owner: t.lc_owner, audits: t.audits, total_no: t.total_no,
+      const mg = Object.entries(t.managers).sort((a, b) => b[1] - a[1])[0];
+      return { row_id: t.row_id, scope: t.scope, lc_owner: t.lc_owner, manager: mg ? mg[0] : '', fatal: t.fatal, audits: t.audits, total_no: t.total_no,
         avg_no: t.total_no / t.audits, red: t.red, amber: t.amber, orange: t.orange, green: t.green,
         risk_share: (t.red + t.amber) / t.audits, flagged: t.flagged,
         worst_param: worst ? worst[0] : '—', worst_count: worst ? worst[1] : 0, cause: l[0], tip: l[1], escalate: false, rank: 0 };
@@ -339,9 +373,12 @@ dash.calc('scope_summary', {
   fn: (audits_scored, scope_causes, scope_counsellors) => {
     const m = new Map();
     audits_scored.forEach((a) => a.scopes.forEach((s) => {
-      const t = m.get(s) || { scope: s, audits: 0, total_no: 0, total_yes: 0, total_na: 0, red: 0, amber: 0, orange: 0, green: 0, flagged: 0, trig: {}, latest_date: '', first_date: '9999', week_start: a.week_start, counsellors: new Set(), qas: new Set() };
+      const t = m.get(s) || { scope: s, audits: 0, total_no: 0, total_yes: 0, total_na: 0, red: 0, amber: 0, orange: 0, green: 0, flagged: 0, fatal: 0, tt_sum: 0, tt_n: 0, latest_audited: '', trig: {}, latest_date: '', first_date: '9999', week_start: a.week_start, counsellors: new Set(), qas: new Set() };
       t.audits++; t.total_no += a.no; t.total_yes += a.yes; t.total_na += a.na; t[a.rag]++;
       if (a.flagged) t.flagged++;
+      if (a.fatal) t.fatal++;
+      if (a.talk_time_sec != null) { t.tt_sum += a.talk_time_sec; t.tt_n++; }
+      if (a.audited_date > t.latest_audited) t.latest_audited = a.audited_date;
       a.triggers.forEach((x) => { t.trig[x] = (t.trig[x] || 0) + 1; });
       if (a.date > t.latest_date) t.latest_date = a.date;
       if (a.date < t.first_date) t.first_date = a.date;
@@ -366,7 +403,8 @@ dash.calc('scope_summary', {
         avg_no: t.total_no / t.audits, red: t.red, amber: t.amber, orange: t.orange, green: t.green,
         risk_count: t.red + t.amber, risk_pct: (t.red + t.amber) / t.audits,
         qa_score: app ? (10 * t.total_yes) / app : null,
-        flagged: t.flagged, flagged_pct: t.flagged / t.audits, top_trigger: top ? top[0] : '—',
+        flagged: t.flagged, flagged_pct: t.flagged / t.audits, fatal: t.fatal,
+        avg_talk_min: t.tt_n ? t.tt_sum / t.tt_n / 60 : null, latest_audited: t.latest_audited || null, top_trigger: top ? top[0] : '—',
         top_cause: topCause[t.scope] ? topCause[t.scope].cause : '—', top_cause_no: topCause[t.scope] ? topCause[t.scope].no : 0,
         top_cause_share: topCause[t.scope] ? topCause[t.scope].share : 0,
         escalations: esc[t.scope] || 0, counsellors: t.counsellors.size, qas: t.qas.size,

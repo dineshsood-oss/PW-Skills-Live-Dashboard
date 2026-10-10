@@ -145,14 +145,14 @@
       mark(e, 'scope_summary', k, where('scope', scope));
       if (!row) { e.textContent = '—'; return; }
       const v = row[k];
-      e.textContent = v == null ? '—' : /pct/.test(k) ? fPct(v) : k === 'avg_no' || k === 'qa_score' || k === 'avg_talk_min' ? f1(v) : typeof v === 'number' ? fInt(v) : v;
+      e.textContent = v == null ? '—' : /pct/.test(k) ? fPct(v) : k === 'avg_no' || k === 'avg_talk_min' ? f1(v) : typeof v === 'number' ? fInt(v) : v;
     });
     $$('[data-d]', root).forEach((e) => {
       const k = e.dataset.d;
       e.replaceChildren();
       if (!row || row[k] == null) { e.textContent = row && row.grain !== 'all' ? 'first period in view' : (row && row.month !== 'all' ? 'first month on record' : ''); e.removeAttribute('data-source'); return; }
       const v = row[k];
-      const better = k === 'd_qa_score' ? v > 0 : k === 'd_audits' ? null : v < 0;
+      const better = k === 'd_audits' ? null : v < 0;
       const txt = k === 'd_audits' ? d3.format('+,')(v) : /pct/.test(k) ? `${v > 0 ? '+' : ''}${f1(v * 100)} pts` : d3.format('+.1f')(v);
       const s = mark(el('span', better == null || Math.abs(v) < 1e-9 ? '' : better ? 'good' : 'bad', txt), 'scope_summary', k, where('scope', row.scope));
       e.append(s, ` vs ${row.prev_label}`);
@@ -166,12 +166,12 @@
     const grain = p.grain === 'week' ? 'week' : 'day';
     const monthKey = p.month || 'all';
     const data = summary.filter((r) => r.month === monthKey && r.grain === grain).sort((a, b) => a.bucket.localeCompare(b.bucket));
-    $('#trendNote').textContent = `Audits per ${grain} split by RAG band, with average NO per audit as the line. Click a bar to focus that ${grain}; click it again to clear.`;
+    $('#trendNote').textContent = `Bars: total parameters marked NO per ${grain} (left axis). Line: average NO per audit (right axis). Click a bar to focus that ${grain}; click it again to clear.`;
     box.replaceChildren();
     if (!data.length) { box.append(el('div', 'qa-empty', 'No audits in this period yet.')); return; }
     const W = box.clientWidth || 600; const H = 280;
     const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).attr('height', H);
-    const maxA = d3.max(data, (d) => d.audits);
+    const maxA = d3.max(data, (d) => d.total_no) || 1;
     const maxN = d3.max(data, (d) => d.avg_no) || 1;
     const y = d3.scaleLinear([0, maxA * 1.1], [H - 28, 12]).nice();
     const y2 = d3.scaleLinear([0, Math.max(maxN * 1.15, 5)], [H - 28, 12]).nice();
@@ -185,28 +185,28 @@
     svg.append('g').attr('transform', `translate(${W - mr},0)`).call(d3.axisRight(y2).ticks(5).tickFormat((v) => f1(v)).tickSize(0).tickPadding(8)).attr('font-size', null).attr('font-family', null).call((g) => g.select('.domain').remove());
     svg.append('g').attr('transform', `translate(0,${H - 28})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8).tickFormat((b, i) => (i % every ? '' : lab(b)))).attr('font-size', null).attr('font-family', null);
     const sel = p.bucket && p.bucket !== 'all' && p.grain === grain ? p.bucket : null;
-    const keys = ['green', 'orange', 'amber', 'red'];
-    const stack = d3.stack().keys(keys)(data);
     const bw = Math.min(32, x.bandwidth());
     const off = (x.bandwidth() - bw) / 2;
-    svg.append('g').selectAll('g').data(stack).join('g').attr('fill', (s) => RAG[s.key])
-      .selectAll('rect').data((s) => s).join('rect')
-      .attr('x', (d) => x(d.data.bucket) + off).attr('width', bw)
-      .attr('y', (d) => y(d[1])).attr('height', (d) => Math.max(0, y(d[0]) - y(d[1])))
-      .attr('opacity', (d) => (sel && d.data.bucket !== sel ? 0.28 : 0.9));
+    const BAR = dash.colors[0]; const LINE = RAG.red;
+    svg.append('g').selectAll('rect').data(data).join('rect')
+      .attr('x', (d) => x(d.bucket) + off).attr('width', bw).attr('rx', 3)
+      .attr('y', (d) => y(d.total_no)).attr('height', (d) => Math.max(0, y(0) - y(d.total_no)))
+      .attr('fill', BAR).attr('opacity', (d) => (sel && d.bucket !== sel ? 0.28 : 0.85));
+    if (data.length <= 16) svg.append('g').selectAll('text').data(data).join('text').attr('class', 'qa-axis-label').attr('text-anchor', 'middle')
+      .attr('x', (d) => x(d.bucket) + x.bandwidth() / 2).attr('y', (d) => y(d.total_no) - 4).text((d) => fInt(d.total_no));
     const line = d3.line().x((d) => x(d.bucket) + x.bandwidth() / 2).y((d) => y2(d.avg_no));
-    svg.append('path').datum(data).attr('fill', 'none').attr('stroke', 'var(--color-fg)').attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', line);
-    svg.append('g').selectAll('circle').data(data).join('circle').attr('r', 2.5).attr('fill', 'var(--color-fg)').attr('cx', (d) => x(d.bucket) + x.bandwidth() / 2).attr('cy', (d) => y2(d.avg_no));
-    svg.append('text').attr('class', 'qa-axis-label').attr('x', ml).attr('y', 8).text('Audits');
-    svg.append('text').attr('class', 'qa-axis-label').attr('x', W - mr).attr('y', 8).attr('text-anchor', 'end').text('Avg NO');
+    svg.append('path').datum(data).attr('fill', 'none').attr('stroke', LINE).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round').attr('d', line);
+    svg.append('g').selectAll('circle').data(data).join('circle').attr('r', 3).attr('fill', LINE).attr('cx', (d) => x(d.bucket) + x.bandwidth() / 2).attr('cy', (d) => y2(d.avg_no));
+    svg.append('text').attr('class', 'qa-axis-label').attr('x', ml).attr('y', 8).text('Total NO');
+    svg.append('text').attr('class', 'qa-axis-label').attr('x', W - mr).attr('y', 8).attr('text-anchor', 'end').text('Avg NO / audit');
     const tt = tip(box);
     svg.append('g').selectAll('rect').data(data).join('rect').attr('class', 'qa-clickable')
       .attr('x', (d) => x(d.bucket)).attr('width', x.bandwidth()).attr('y', 12).attr('height', H - 40).attr('fill', 'transparent')
-      .on('mousemove', (ev, d) => tt.show(ev, d.label, [[null, 'Audits', fInt(d.audits)], ...['red', 'amber', 'orange', 'green'].map((k) => [RAG[k], RAG_NAME[k], fInt(d[k])]), [null, 'Avg NO / audit', f1(d.avg_no)], [null, 'QA score', d.qa_score == null ? '—' : f1(d.qa_score)]]))
+      .on('mousemove', (ev, d) => tt.show(ev, d.label, [[BAR, 'Total NO marked', fInt(d.total_no)], [LINE, 'Avg NO / audit', f1(d.avg_no)], [null, 'Audits', fInt(d.audits)], [null, 'RED / AMBER', `${fInt(d.red)} / ${fInt(d.amber)}`]]))
       .on('mouseleave', () => tt.hide())
       .on('click', (ev, d) => dash.setParams(sel === d.bucket ? { bucket: 'all' } : { grain, bucket: d.bucket }));
     const lg = $('#trendLegend');
-    lg.replaceChildren(...['red', 'amber', 'orange', 'green'].map((k) => { const s = el('span'); const i = el('i'); i.style.background = RAG[k]; s.append(i, RAG_NAME[k]); return s; }), (() => { const s = el('span'); const i = el('i', 'line'); i.style.background = 'var(--color-fg)'; s.append(i, 'Avg NO per audit'); return s; })());
+    lg.replaceChildren((() => { const s = el('span'); const i = el('i'); i.style.background = BAR; s.append(i, 'Total NO marked'); return s; })(), (() => { const s = el('span'); const i = el('i', 'line'); i.style.background = LINE; s.append(i, 'Avg NO per audit'); return s; })());
   };
 
   /* ---------- overview: RAG donut ---------- */
@@ -527,7 +527,7 @@
       esc.length ? [sum('escalations', fInt(row.escalations)), ' counsellor(s) showing repeat RED ratings in this period.'] : ['No repeat-RED counsellors in this period — monitor as new audits land.'],
       esc.map((r) => { const w = where('row_id', r.row_id); return [mark(el('b', null, r.lc_owner), 'scope_counsellors', 'lc_owner', w), r.manager ? ` (${r.manager})` : '', ' — ', num('scope_counsellors', 'red', w, fInt(r.red)), ' RED / ', num('scope_counsellors', 'audits', w, fInt(r.audits)), ' audits', ...(r.fatal ? [', ', num('scope_counsellors', 'fatal', w, fInt(r.fatal)), ' FATAL'] : []), '. Warning 1 → Warning 2 → RTHR (refer to HR) if the next audit repeats.']; }));
     goal('Goal 6 — Tracking improvement', false,
-      ['Baseline QA score for this period is ', sum('qa_score', row.qa_score == null ? '—' : f1(row.qa_score)), '/10', ...(row.d_qa_score == null ? ['.'] : [' (', sum('d_qa_score', d3.format('+.1f')(row.d_qa_score)), ` vs ${row.prev_label}).`]), ' Re-check after each D-1 upload and log the reading in the POA workbook at each formal review.'], []);
+      ['Baseline for this period: ', sum('avg_no', f1(row.avg_no)), ' NO per audit', ...(row.d_avg_no == null ? ['.'] : [' (', sum('d_avg_no', d3.format('+.1f')(row.d_avg_no)), ` vs ${row.prev_label}).`]), ' Re-check after each D-1 upload and log the reading in the POA workbook at each formal review.'], []);
   };
 
   /* ---------- header ---------- */
@@ -552,8 +552,8 @@
     if (!row) { take.textContent = 'No audits in the selected period.'; return; }
     const w = where('scope', scope);
     take.append(`${row.label}: `, mark(el('b', 'n', fInt(row.audits)), 'scope_summary', 'audits', w), ' audits, ',
-      mark(el('b', 'n', fPct(row.risk_pct)), 'scope_summary', 'risk_pct', w), ' at RED/AMBER, QA score ',
-      mark(el('b', 'n', row.qa_score == null ? '—' : f1(row.qa_score)), 'scope_summary', 'qa_score', w), '/10. Biggest driver: ',
+      mark(el('b', 'n', fPct(row.risk_pct)), 'scope_summary', 'risk_pct', w), ' at RED/AMBER, ',
+      mark(el('b', 'n', f1(row.avg_no)), 'scope_summary', 'avg_no', w), ' NO per audit. Biggest driver: ',
       mark(el('b', null, row.top_cause), 'scope_summary', 'top_cause', w), '.', ...(row.fatal ? [' ', mark(el('b', 'n', fInt(row.fatal)), 'scope_summary', 'fatal', w), ' call(s) marked FATAL/Concerning.'] : []));
     const ac = $('#alarmCount'); ac.textContent = fInt(row.flagged); ac.dataset.where = w;
   };

@@ -197,13 +197,12 @@
       <div class="qa-kpi"><span class="k-label">Parameters marked NO</span><span class="k-num dash-skeleton" data-k="total_no">—</span><span class="k-delta">across all parameters audited</span></div>
       <div class="qa-kpi"><span class="k-label">Avg NO per audit</span><span class="k-num dash-skeleton" data-k="avg_no">—</span><span class="k-delta" data-d="d_avg_no"></span></div>
       <div class="qa-kpi warn"><span class="k-label">Audits at RED / AMBER</span><span class="k-num dash-skeleton" data-k="risk_pct">—</span><span class="k-delta" data-d="d_risk_pct"></span></div>
-      <div class="qa-kpi"><span class="k-label">QA score (/10)</span><span class="k-num dash-skeleton" data-k="qa_score">—</span><span class="k-delta" data-d="d_qa_score"></span></div>
       <div class="qa-kpi"><span class="k-label">Flagged by BOT 2</span><span class="k-num dash-skeleton" data-k="flagged_pct">—</span><span class="k-delta" data-d="d_flagged_pct"></span></div>
     </div>
     <div class="qa-grid wide">
       <div class="qa-card" id="trendCard">
-        <h2 id="trendTitle">Audit volume &amp; risk trend</h2>
-        <p class="c-note" id="trendNote">Audits per day split by RAG band, with average NO per audit as the line. Click a bar to focus that day.</p>
+        <h2 id="trendTitle">Total NO marked &amp; avg NO per audit</h2>
+        <p class="c-note" id="trendNote">Bars: total parameters marked NO per day. Line: average NO per audit.</p>
         <div class="qa-chart" id="trendChart" data-source="scope_summary"></div>
         <div class="qa-legend" id="trendLegend"></div>
       </div>
@@ -365,7 +364,7 @@
   <!-- ACTION PLAN -->
   <section class="qa-page" id="plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
     <div class="qa-kpis">
-      <div class="qa-kpi"><span class="k-label">Current QA score (/10)</span><span class="k-num dash-skeleton" data-k="qa_score">—</span><span class="k-delta" data-d="d_qa_score"></span></div>
+      <div class="qa-kpi"><span class="k-label">Avg NO per audit</span><span class="k-num dash-skeleton" data-k="avg_no">—</span><span class="k-delta" data-d="d_avg_no"></span></div>
       <div class="qa-kpi warn"><span class="k-label">Audits at RED / AMBER</span><span class="k-num dash-skeleton" data-k="risk_pct">—</span><span class="k-delta" data-d="d_risk_pct"></span></div>
       <div class="qa-kpi"><span class="k-label">#1 root-cause driver</span><span class="k-num small dash-skeleton" data-k="top_cause">—</span></div>
       <div class="qa-kpi"><span class="k-label">Counsellors for escalation</span><span class="k-num dash-skeleton" data-k="escalations">—</span></div>

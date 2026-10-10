@@ -369,7 +369,7 @@ dash.calc('scope_counsellors', {
 dash.calc('scope_summary', {
   inputs: ['audits_scored', 'scope_causes', 'scope_counsellors'],
   title: 'Headline figures by period',
-  description: 'Per month, day and week: audits, NOs, avg NO per audit, RAG mix, QA score (/10 = 10 × YES ÷ (YES+NO)), flagged cases, top root cause, escalations, and the change from the previous period of the same kind.',
+  description: 'Per month, day and week: audits, NOs, avg NO per audit, RAG mix, flagged cases, top root cause, escalations, and the change from the previous period of the same kind.',
   fn: (audits_scored, scope_causes, scope_counsellors) => {
     const m = new Map();
     audits_scored.forEach((a) => a.scopes.forEach((s) => {
@@ -397,12 +397,10 @@ dash.calc('scope_summary', {
       if (grain === 'day') label = fmtD(bucket, true);
       else if (grain === 'week') { const end = new Date(t.week_start + 'T00:00:00Z'); end.setUTCDate(end.getUTCDate() + 6); label = `${bucket.slice(5)} · ${fmtD(t.week_start)} – ${fmtD(end.toISOString().slice(0, 10))}`; }
       else label = month === 'all' ? 'All months' : new Date(month + '-01T00:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-      const app = t.total_no + t.total_yes;
       return {
         scope: t.scope, month, grain, bucket, label, audits: t.audits, total_no: t.total_no, total_yes: t.total_yes, total_na: t.total_na,
         avg_no: t.total_no / t.audits, red: t.red, amber: t.amber, orange: t.orange, green: t.green,
         risk_count: t.red + t.amber, risk_pct: (t.red + t.amber) / t.audits,
-        qa_score: app ? (10 * t.total_yes) / app : null,
         flagged: t.flagged, flagged_pct: t.flagged / t.audits, fatal: t.fatal,
         avg_talk_min: t.tt_n ? t.tt_sum / t.tt_n / 60 : null, latest_audited: t.latest_audited || null, top_trigger: top ? top[0] : '—',
         top_cause: topCause[t.scope] ? topCause[t.scope].cause : '—', top_cause_no: topCause[t.scope] ? topCause[t.scope].no : 0,
@@ -425,7 +423,6 @@ dash.calc('scope_summary', {
         r.d_audits = p ? r.audits - p.audits : null;
         r.d_avg_no = p ? r.avg_no - p.avg_no : null;
         r.d_risk_pct = p ? r.risk_pct - p.risk_pct : null;
-        r.d_qa_score = p && p.qa_score != null && r.qa_score != null ? r.qa_score - p.qa_score : null;
         r.d_flagged_pct = p ? r.flagged_pct - p.flagged_pct : null;
       });
     });

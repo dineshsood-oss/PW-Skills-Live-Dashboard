@@ -1,0 +1,379 @@
+<style>
+#dash-root { --dash-gutter: clamp(12px, 2.5vw, 28px); }
+.qa { font-family: var(--font-anthropic-sans); color: var(--color-fg); max-width: 1320px; margin-inline: auto; padding-bottom: 48px; }
+.qa * { box-sizing: border-box; }
+.qa-head { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); justify-content: space-between; align-items: flex-end; padding: var(--cds-pad-md) 0 var(--cds-pad-sm); }
+.qa-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.2; }
+.qa-take { margin: 6px 0 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); max-width: 70ch; }
+.qa-fresh { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.qa-fresh a { color: inherit; }
+.qa-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-panel); font-weight: 500; }
+.qa-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.qa-badge.ok { color: var(--color-ok); } .qa-badge.warn { color: var(--color-warn); }
+
+.qa-bar { position: sticky; top: 0; z-index: 5; background: var(--color-bg); border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-gap-md); }
+.qa-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.qa-tabs::-webkit-scrollbar { display: none; }
+.qa-tab { appearance: none; border: 0; background: none; font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg-muted); padding: 10px 14px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
+.qa-tab:hover { color: var(--color-fg); }
+.qa-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: 600; }
+.qa-tab .qa-count { font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--color-panel); border: 1px solid var(--color-border-line); font-variant-numeric: tabular-nums; }
+.qa-tab .qa-count.hot { color: #fff; background: #c0392b; border-color: #c0392b; }
+.qa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm) var(--cds-gap-md); padding: var(--cds-pad-sm) 0; font-size: var(--cds-font-size-caption); }
+.qa-filters label { color: var(--color-fg-muted); display: inline-flex; align-items: center; gap: 6px; }
+.qa select, .qa input[type="search"] { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 5px 8px; max-width: 100%; }
+.qa-seg { display: inline-flex; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; }
+.qa-seg button, .qa-btn, .qa-chip { appearance: none; font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); background: var(--color-panel); border: 0; padding: 5px 10px; cursor: pointer; }
+.qa-seg button + button { border-left: 1px solid var(--color-border-line); }
+.qa-seg button[aria-pressed="true"] { background: var(--color-fg); color: var(--color-bg); }
+.qa-btn { border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); }
+.qa-btn:hover, .qa-chip:hover { color: var(--color-fg); }
+.qa-btn:disabled { opacity: .4; cursor: default; }
+.qa-step { display: inline-flex; gap: 4px; align-items: center; }
+.qa-note { color: var(--color-fg-muted); margin-left: auto; }
+
+.qa-page[hidden] { display: none; }
+.qa-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.qa-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: flex; flex-direction: column; gap: 4px; min-height: 108px; }
+.qa-kpi .k-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.qa-kpi .k-num { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.qa-kpi .k-num.small { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-heading); font-weight: 500; }
+.qa-kpi .k-delta { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+.k-delta .good { color: var(--color-ok); } .k-delta .bad { color: var(--color-bad); }
+.qa-kpi.warn { border-left: 3px solid #c0392b; }
+
+.qa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.qa-grid.wide { grid-template-columns: minmax(0, 2fr) minmax(min(100%, 20rem), 1fr); }
+@media (max-width: 860px) { .qa-grid.wide { grid-template-columns: 1fr; } }
+.qa-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; margin-bottom: var(--cds-gap-md); }
+.qa-grid > .qa-card { margin-bottom: 0; }
+.qa-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.qa-card .c-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 4px 0 var(--cds-pad-md); }
+.qa-card.accent-red { border-left: 3px solid #c0392b; } .qa-card.accent-green { border-left: 3px solid #2f7d4f; }
+.qa-tag { font-size: 10.5px; font-weight: 500; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); }
+.qa-chart { position: relative; min-height: 280px; }
+.qa-chart.tall { min-height: 420px; }
+.qa-chart svg { display: block; overflow: visible; }
+.qa-chart svg text { font-family: var(--font-anthropic-sans); }
+.qa-chart .tick text, .qa-axis-label { fill: var(--color-fg-muted); font-size: 11px; }
+.qa-chart .domain { stroke: var(--cds-chart-axis); }
+.qa-chart .grid line { stroke: var(--cds-chart-grid); }
+.qa-clickable { cursor: pointer; }
+.qa-tip { position: absolute; pointer-events: none; z-index: 3; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); min-width: 140px; max-width: 280px; opacity: 0; transition: opacity .12s; }
+.qa-tip .t-head { color: var(--cds-text-secondary); margin-bottom: 3px; }
+.qa-tip .t-row { display: flex; gap: 6px; align-items: center; justify-content: space-between; font-variant-numeric: tabular-nums; }
+.qa-tip .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+.qa-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: 8px; }
+.qa-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.qa-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.qa-legend i.line { height: 2px; border-radius: 1px; }
+
+.qa-donut { display: flex; gap: var(--cds-gap-md); align-items: center; flex-wrap: wrap; min-height: 240px; }
+.qa-donut svg { flex: 0 0 auto; }
+.qa-donut ul { list-style: none; margin: 0; padding: 0; flex: 1 1 10rem; display: grid; gap: 6px; }
+.qa-donut li { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; font-size: var(--cds-font-size-caption); padding: 6px 8px; border-radius: var(--cds-radius); cursor: pointer; }
+.qa-donut li:hover { background: var(--color-bg); }
+.qa-donut li i { width: 12px; height: 12px; border-radius: 3px; }
+.qa-donut li b { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.qa-tablebox { overflow: auto; max-height: 560px; border-top: 1px solid var(--color-border-line); }
+.qa table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); }
+.qa th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: 500; color: var(--color-fg-muted); padding: 8px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; z-index: 1; }
+.qa th.num, .qa td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.qa th button { appearance: none; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; padding: 0; }
+.qa th[aria-sort="ascending"] button::after { content: ' ↑'; } .qa th[aria-sort="descending"] button::after { content: ' ↓'; }
+.qa td { padding: 7px 8px; border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.qa tbody tr.qa-clickable:hover td { background: var(--color-bg); }
+.qa td.wrap { white-space: normal; min-width: 14rem; }
+.qa-meter { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.qa-meter .track { flex: 1; height: 7px; border-radius: 4px; background: var(--cds-chart-grid); overflow: hidden; }
+.qa-meter .fill { height: 100%; border-radius: 4px; }
+.qa-meter span { font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: right; }
+.qa-ragbar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; min-width: 90px; background: var(--cds-chart-grid); }
+.qa-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: #fff; letter-spacing: .3px; }
+.qa-pill.red { background: #c0392b; } .qa-pill.amber { background: #c98b06; } .qa-pill.orange { background: #d9662b; } .qa-pill.green { background: #2f7d4f; }
+.qa-pill.esc { background: transparent; color: #c0392b; border: 1px solid #c0392b; }
+.qa-pill.crit { background: transparent; color: var(--color-fg-muted); border: 1px solid var(--color-border-line); font-weight: 500; }
+.qa-toolbar { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); }
+.qa-toolbar input[type="search"] { min-width: 12rem; flex: 1 1 12rem; max-width: 22rem; }
+.qa-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.qa-chip { border: 1px solid var(--color-border-line); border-radius: 999px; padding: 3px 10px; }
+.qa-chip[aria-pressed="true"] { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
+.qa-picked { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--color-fg); color: var(--color-bg); border: 0; font: inherit; font-size: var(--cds-font-size-caption); cursor: pointer; }
+.qa-picked[hidden] { display: none; }
+
+.qa-group { border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); margin-bottom: var(--cds-gap-sm); overflow: hidden; }
+.qa-group > button { width: 100%; appearance: none; border: 0; background: var(--color-panel); font: inherit; color: inherit; cursor: pointer; display: grid; grid-template-columns: 1fr minmax(120px, 30%) auto; gap: var(--cds-gap-md); align-items: center; padding: 12px 14px; text-align: left; }
+.qa-group > button:hover { background: var(--color-bg); }
+.qa-group .g-name { font-weight: 600; font-size: var(--cds-font-size-body); }
+.qa-group .g-name small { font-weight: 400; color: var(--color-fg-muted); margin-left: 6px; }
+.qa-group .g-num { font-variant-numeric: tabular-nums; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); white-space: nowrap; }
+.qa-group .g-num b { color: var(--color-fg); font-weight: 600; }
+.qa-group > div { padding: 0 14px 10px; }
+.qa-group > div[hidden] { display: none; }
+@media (max-width: 560px) { .qa-group > button { grid-template-columns: 1fr auto; } .qa-group > button .qa-meter { display: none; } }
+
+.qa-alarms { display: grid; gap: var(--cds-gap-sm); }
+.qa-alarm { border: 1px solid var(--color-border-line); border-left: 4px solid #c0392b; border-radius: var(--cds-radius); padding: 12px 14px; background: var(--color-panel); }
+.qa-alarm.medium { border-left-color: #c98b06; }
+.qa-alarm .a-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.qa-alarm .a-who { font-weight: 600; font-size: var(--cds-font-size-body); }
+.qa-alarm .a-who small { font-weight: 400; color: var(--color-fg-muted); }
+.qa-alarm .a-meta { font-size: 11.5px; color: var(--color-fg-muted); margin-top: 2px; }
+.qa-alarm ul { margin: 8px 0 0; padding-left: 18px; font-size: var(--cds-font-size-caption); }
+.qa-alarm .a-remark { margin-top: 8px; padding: 8px 10px; background: var(--color-bg); border-radius: var(--cds-radius); font-size: var(--cds-font-size-caption); font-style: italic; }
+.qa-more { margin-top: var(--cds-gap-sm); }
+
+.qa-coach { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--cds-gap-sm); }
+.qa-coachcard { border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.qa-coachcard .c-name { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
+.qa-coachcard .c-name small { font-weight: 400; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.qa-coachcard .c-miss { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.qa-coachcard .c-tip { font-size: var(--cds-font-size-caption); background: var(--color-bg); border-radius: var(--cds-radius); padding: 8px 10px; border-left: 3px solid var(--color-fg); }
+.qa-coachcard .c-tip b { display: block; font-size: 10.5px; letter-spacing: .4px; color: var(--color-fg-muted); margin-bottom: 2px; }
+
+.qa-goal { border: 1px solid var(--color-border-line); border-left: 4px solid #2f7d4f; border-radius: var(--cds-radius); padding: 14px 16px; margin-bottom: var(--cds-gap-sm); background: var(--color-panel); }
+.qa-goal.urgent { border-left-color: #c0392b; }
+.qa-goal h3 { margin: 0; font-size: var(--cds-font-size-body); font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.qa-goal p { margin: 4px 0 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.qa-goal ul { margin: 8px 0 0; padding-left: 18px; font-size: var(--cds-font-size-caption); }
+.qa-goal li { margin-bottom: 4px; }
+.qa b.n { font-weight: 600; font-variant-numeric: tabular-nums; }
+.qa-empty { padding: 28px; text-align: center; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.qa-fail { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: inherit; }
+.qa-fail::before { content: ''; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+.qa-foot { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-md); line-height: 1.6; }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+[data-dash-source-state=empty] { color: transparent; }
+@media (prefers-reduced-motion: no-preference) {
+  .qa-page.enter { animation: qa-in var(--cds-dur-slow) var(--cds-ease-out); }
+  @keyframes qa-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}
+</style>
+
+<div class="qa">
+  <header class="qa-head" id="top">
+    <div>
+      <h1 id="title">Skill vertical — counsellor QA audit MIS</h1>
+      <p class="qa-take" id="takeaway"><span class="dash-skeleton">Loading audits from the Google Sheet…</span></p>
+    </div>
+    <div class="qa-fresh">
+      <span id="d1badge" class="qa-badge dash-skeleton">Checking D-1 upload</span>
+      <span>Latest audit: <b data-source="scope_summary" data-field="latest_date" data-where="scope=all|all|all" id="latest">—</b> · <a href="https://docs.google.com/spreadsheets/d/1waJ54P4ciUFPocZtZ6BEfqnsGKYbDn345ww5Nl_QHGs/edit" target="_blank" rel="noopener">Open audit sheet ↗</a></span>
+    </div>
+  </header>
+
+  <div class="qa-bar">
+    <nav class="qa-tabs" role="tablist" aria-label="Dashboard pages">
+      <button class="qa-tab" role="tab" id="tab-overview" data-page="overview" aria-selected="true">Overview</button>
+      <button class="qa-tab" role="tab" id="tab-parameters" data-page="parameters" aria-selected="false">Parameters</button>
+      <button class="qa-tab" role="tab" id="tab-groups" data-page="groups" aria-selected="false">Parameter groups</button>
+      <button class="qa-tab" role="tab" id="tab-counsellors" data-page="counsellors" aria-selected="false">Counsellors</button>
+      <button class="qa-tab" role="tab" id="tab-alarms" data-page="alarms" aria-selected="false">⚠ Alarms <span class="qa-count hot" id="alarmCount" data-source="scope_summary" data-field="flagged">—</span></button>
+      <button class="qa-tab" role="tab" id="tab-coaching" data-page="coaching" aria-selected="false">Coaching</button>
+      <button class="qa-tab" role="tab" id="tab-plan" data-page="plan" aria-selected="false">Action plan</button>
+    </nav>
+    <div class="qa-filters" id="filters">
+      <label>Month <select id="fMonth" aria-label="Month" data-source="scope_summary"></select></label>
+      <div class="qa-seg" id="fGrain" role="group" aria-label="Period">
+        <button data-g="day" aria-pressed="true">Day on day</button>
+        <button data-g="week" aria-pressed="false">Week on week</button>
+        <button data-g="all" aria-pressed="false">Whole month</button>
+      </div>
+      <span class="qa-step">
+        <button class="qa-btn" id="fPrev" aria-label="Previous period">‹</button>
+        <select id="fBucket" aria-label="Day or week"></select>
+        <button class="qa-btn" id="fNext" aria-label="Next period">›</button>
+      </span>
+      <button class="qa-btn" id="fReset">Reset</button>
+      <span class="qa-note" id="fNote"></span>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section class="qa-page" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+    <div class="qa-kpis" id="ovKpis">
+      <div class="qa-kpi"><span class="k-label">Audits</span><span class="k-num dash-skeleton" data-k="audits">—</span><span class="k-delta" data-d="d_audits"></span></div>
+      <div class="qa-kpi"><span class="k-label">Parameters marked NO</span><span class="k-num dash-skeleton" data-k="total_no">—</span><span class="k-delta">of 24 checked per audit</span></div>
+      <div class="qa-kpi"><span class="k-label">Avg NO per audit</span><span class="k-num dash-skeleton" data-k="avg_no">—</span><span class="k-delta" data-d="d_avg_no"></span></div>
+      <div class="qa-kpi warn"><span class="k-label">Audits at RED / AMBER</span><span class="k-num dash-skeleton" data-k="risk_pct">—</span><span class="k-delta" data-d="d_risk_pct"></span></div>
+      <div class="qa-kpi"><span class="k-label">QA score (/10)</span><span class="k-num dash-skeleton" data-k="qa_score">—</span><span class="k-delta" data-d="d_qa_score"></span></div>
+      <div class="qa-kpi"><span class="k-label">Flagged by BOT 2</span><span class="k-num dash-skeleton" data-k="flagged_pct">—</span><span class="k-delta" data-d="d_flagged_pct"></span></div>
+    </div>
+    <div class="qa-grid wide">
+      <div class="qa-card" id="trendCard">
+        <h2 id="trendTitle">Audit volume &amp; risk trend</h2>
+        <p class="c-note" id="trendNote">Audits per day split by RAG band, with average NO per audit as the line. Click a bar to focus that day.</p>
+        <div class="qa-chart" id="trendChart" data-source="scope_summary"></div>
+        <div class="qa-legend" id="trendLegend"></div>
+      </div>
+      <div class="qa-card" id="ragCard">
+        <h2>Audit risk mix (RAG)</h2>
+        <p class="c-note">From the sheet’s ZTP Category (RED 20+ missed, AMBER 15+, ORANGE 10+, GREEN 0–9). Click a band to see its cases.</p>
+        <div class="qa-donut" id="ragChart" data-source="scope_summary"></div>
+      </div>
+    </div>
+    <div class="qa-grid">
+      <div class="qa-card" id="top5Card">
+        <h2>Top 5 most-missed parameters</h2>
+        <p class="c-note">Ranked by NO count; % is of applicable audits (YES + NO, N/A excluded). Click to open Parameters.</p>
+        <table id="top5" data-source="scope_params" data-row-key="row_id">
+          <thead><tr><th data-field="param">Parameter</th><th data-field="group">Group</th><th class="num" data-field="no">NO</th><th data-field="pct_no">% NO</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="qa-card" id="groupsMiniCard">
+        <h2>Miss rate by parameter group</h2>
+        <p class="c-note">% NO of applicable checks in each of the six template sections.</p>
+        <table id="groupsMini" data-source="scope_groups" data-row-key="row_id">
+          <thead><tr><th data-field="group">Group</th><th class="num" data-field="no">NO</th><th data-field="pct_no">% NO</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARAMETERS -->
+  <section class="qa-page" id="parameters" role="tabpanel" aria-labelledby="tab-parameters" hidden>
+    <div class="qa-card" id="paramChartCard">
+      <h2>All parameters — where calls break down</h2>
+      <p class="c-note">NO count per parameter in the selected period; critical compliance parameters in red. Hover for the full name and rates.</p>
+      <div class="qa-toolbar"><span class="qa-seg" id="paramMetric"><button data-m="no" aria-pressed="true">NO count</button><button data-m="pct_no" aria-pressed="false">% NO of applicable</button></span></div>
+      <div class="qa-chart tall" id="paramChart" data-source="scope_params"></div>
+    </div>
+    <div class="qa-card" id="paramTableCard">
+      <h2>Parameter detail</h2>
+      <p class="c-note">Sort by any column; search or pick a group.</p>
+      <div class="qa-toolbar">
+        <input type="search" id="paramSearch" placeholder="Search parameters…" aria-label="Search parameters">
+        <select id="paramGroup" aria-label="Group"><option value="">All groups</option></select>
+      </div>
+      <div class="qa-tablebox">
+        <table id="paramTable" data-source="scope_params" data-row-key="row_id">
+          <thead><tr>
+            <th class="num" data-field="rank"><button data-sort="rank">#</button></th>
+            <th data-field="param"><button data-sort="param">Parameter</button></th>
+            <th data-field="group"><button data-sort="group">Group</button></th>
+            <th class="num" data-field="no"><button data-sort="no">NO</button></th>
+            <th class="num" data-field="yes"><button data-sort="yes">YES</button></th>
+            <th class="num" data-field="na"><button data-sort="na">N/A</button></th>
+            <th class="num" data-field="applicable"><button data-sort="applicable">Applicable</button></th>
+            <th data-field="pct_no"><button data-sort="pct_no">% NO of applicable</button></th>
+            <th data-field="cause"><button data-sort="cause">Root cause</button></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- GROUPS -->
+  <section class="qa-page" id="groups" role="tabpanel" aria-labelledby="tab-groups" hidden>
+    <div class="qa-card" id="groupsCard">
+      <h2>Top parameters &amp; sub-parameters</h2>
+      <p class="c-note">The six top-level groups of the audit template. Click a group to expand its sub-parameters.</p>
+      <div id="groupBlocks" data-source="scope_groups scope_params"></div>
+    </div>
+  </section>
+
+  <!-- COUNSELLORS -->
+  <section class="qa-page" id="counsellors" role="tabpanel" aria-labelledby="tab-counsellors" hidden>
+    <div class="qa-card" id="counsellorCard">
+      <h2>Counsellor-level audit summary</h2>
+      <p class="c-note">Every counsellor (LC owner) audited in the period, worst average NO first. Click a row to see that counsellor’s flagged cases.</p>
+      <div class="qa-toolbar">
+        <input type="search" id="lcSearch" placeholder="Search counsellor…" aria-label="Search counsellor">
+        <span class="qa-chips" id="lcChips"><button class="qa-chip" data-f="all" aria-pressed="true">All</button><button class="qa-chip" data-f="esc" aria-pressed="false">Escalation list</button><button class="qa-chip" data-f="red" aria-pressed="false">Has a RED audit</button></span>
+      </div>
+      <div class="qa-tablebox">
+        <table id="lcTable" data-source="scope_counsellors" data-row-key="row_id">
+          <thead><tr>
+            <th data-field="lc_owner"><button data-sort="lc_owner">Counsellor</button></th>
+            <th class="num" data-field="audits"><button data-sort="audits">Audits</button></th>
+            <th class="num" data-field="total_no"><button data-sort="total_no">Total NO</button></th>
+            <th class="num" data-field="avg_no"><button data-sort="avg_no">Avg NO / audit</button></th>
+            <th data-field="red"><button data-sort="risk_share">Risk mix</button></th>
+            <th class="num" data-field="flagged"><button data-sort="flagged">Flagged</button></th>
+            <th data-field="worst_param"><button data-sort="worst_param">Most-missed parameter</button></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ALARMS -->
+  <section class="qa-page" id="alarms" role="tabpanel" aria-labelledby="tab-alarms" hidden>
+    <div class="qa-kpis">
+      <div class="qa-kpi warn"><span class="k-label">Flagged cases</span><span class="k-num dash-skeleton" data-k="flagged">—</span><span class="k-delta">needing QA / TL review</span></div>
+      <div class="qa-kpi"><span class="k-label">% of audited cases flagged</span><span class="k-num dash-skeleton" data-k="flagged_pct">—</span><span class="k-delta" data-d="d_flagged_pct"></span></div>
+      <div class="qa-kpi"><span class="k-label">Most common trigger</span><span class="k-num small dash-skeleton" data-k="top_trigger">—</span></div>
+    </div>
+    <div class="qa-card accent-red" id="alarmCard">
+      <h2>BOT 2 — alarming observations <span class="qa-tag">compliance · mis-selling · trust</span></h2>
+      <p class="c-note">Cases with a RED/AMBER score, a missed critical parameter (placement marks threshold, level packages, 5-opportunity cap, loan tenure, CIBIL impact) or risk language in the QA remark. Review these first.</p>
+      <div class="qa-toolbar">
+        <input type="search" id="alSearch" placeholder="Search name, reg #, course, remark…" aria-label="Search alarms">
+        <select id="alLc" aria-label="Counsellor"><option value="">All counsellors</option></select>
+        <span class="qa-chips" id="alTrig">
+          <button class="qa-chip" data-t="" aria-pressed="true">All triggers</button>
+          <button class="qa-chip" data-t="Low audit score (RED/AMBER)" aria-pressed="false">Low score</button>
+          <button class="qa-chip" data-t="Critical parameter missed" aria-pressed="false">Critical miss</button>
+          <button class="qa-chip" data-t="Risk language in remarks" aria-pressed="false">Risk remark</button>
+        </span>
+        <span class="qa-chips" id="alRag">
+          <button class="qa-chip" data-r="" aria-pressed="true">Any band</button>
+          <button class="qa-chip" data-r="red" aria-pressed="false">RED</button>
+          <button class="qa-chip" data-r="amber" aria-pressed="false">AMBER</button>
+          <button class="qa-chip" data-r="orange" aria-pressed="false">ORANGE</button>
+          <button class="qa-chip" data-r="green" aria-pressed="false">GREEN</button>
+        </span>
+        <span class="qa-note" id="alShown"></span>
+      </div>
+      <div class="qa-alarms" id="alarmList" data-source="audits_scored"></div>
+      <button class="qa-btn qa-more" id="alMore" hidden>Show more</button>
+    </div>
+  </section>
+
+  <!-- COACHING -->
+  <section class="qa-page" id="coaching" role="tabpanel" aria-labelledby="tab-coaching" hidden>
+    <div class="qa-card" id="paretoCard">
+      <h2>Where to spend training time <span class="qa-tag">Pareto 80/20</span></h2>
+      <p class="c-note" id="paretoNote">Parameters ranked by NO count with the running share of all NOs; the ones above the line make up 80% of misses.</p>
+      <div class="qa-chart tall" id="paretoChart" data-source="scope_params"></div>
+    </div>
+    <div class="qa-card" id="causeCard">
+      <h2>Root-cause view <span class="qa-tag">cause &amp; effect</span></h2>
+      <p class="c-note">Is the fix a script change, a knowledge refresh, a habit/discipline issue or a compliance-disclosure gap?</p>
+      <table id="causeTable" data-source="scope_causes" data-row-key="row_id">
+        <thead><tr><th data-field="cause">Root-cause bucket</th><th class="num" data-field="no">NO</th><th data-field="share">Share of NOs</th><th data-field="params">Parameters driving it</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="qa-card" id="coachCard">
+      <h2>Per-counsellor coaching cards</h2>
+      <p class="c-note">The six counsellors with the highest average NO in the period, each with one focus area so coaching stays specific.</p>
+      <div class="qa-coach" id="coachList" data-source="scope_counsellors"></div>
+    </div>
+  </section>
+
+  <!-- ACTION PLAN -->
+  <section class="qa-page" id="plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
+    <div class="qa-kpis">
+      <div class="qa-kpi"><span class="k-label">Current QA score (/10)</span><span class="k-num dash-skeleton" data-k="qa_score">—</span><span class="k-delta" data-d="d_qa_score"></span></div>
+      <div class="qa-kpi warn"><span class="k-label">Audits at RED / AMBER</span><span class="k-num dash-skeleton" data-k="risk_pct">—</span><span class="k-delta" data-d="d_risk_pct"></span></div>
+      <div class="qa-kpi"><span class="k-label">#1 root-cause driver</span><span class="k-num small dash-skeleton" data-k="top_cause">—</span></div>
+      <div class="qa-kpi"><span class="k-label">Counsellors for escalation</span><span class="k-num dash-skeleton" data-k="escalations">—</span></div>
+    </div>
+    <div class="qa-card accent-green" id="planIntro">
+      <h2>BOT 3 — plan of action <span class="qa-tag">live</span></h2>
+      <p class="c-note">Regenerated from the selected period every time new D-1 audits land in the sheet. At each weekly / month-end review, copy these readings into the POA workbook so Status and Target rating stay on record.</p>
+      <div id="goalCards" data-source="scope_summary scope_params scope_counsellors scope_causes"></div>
+    </div>
+  </section>
+
+  <p class="qa-foot" id="foot">Source: one tab per month in the Google Sheet (e.g. <i>Oct-2026</i>); the QA team appends the previous day’s (D-1) audits each morning and the dashboard reads every tab live when it opens or is refreshed. New month → add a new tab with the same header row.</p>
+</div>
+
+<script src="calcs.js"></script>
+<script src="app.js"></script>

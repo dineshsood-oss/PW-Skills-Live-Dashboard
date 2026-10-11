@@ -1,4 +1,4 @@
-# PW Skills — QA Audit MIS (live dashboard)
+# Skill Team - Enrolled Audit Dashboard
 
 Source for the claude.ai Dashboard artifact that replaces the static
 `qa_audit_mis_dashboard.html`. Data is read live from a Google Sheet.

@@ -1,26 +1,35 @@
 <script src="loader.js"></script>
 <style>
 .qa { font-family: var(--font-anthropic-sans); color: var(--color-fg); font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
-.qa-head { display: flex; flex-direction: column; gap: var(--cds-gap-sm); margin-bottom: var(--cds-gap-md); }
-.qa-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.2; }
-.qa-take { margin: 0; color: var(--color-fg-muted); max-width: 70rem; }
+.qa { --pw-accent: #5B4FE0; --pw-accent-text: #4B3FCF; --pw-line: #D9682B; --cat-rockers: #1E7A4F; --cat-movers: #2B5FC4; --cat-levellers: #C98A1E; --cat-strugglers: #B5381D; }
+.qa-head { display: flex; flex-direction: column; gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.qa-brand { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cds-gap-md); padding-bottom: var(--cds-pad-md); border-bottom: 1px solid var(--color-border-line); }
+.qa-brand-id { display: flex; align-items: center; gap: var(--cds-gap-md); min-width: 0; }
+.qa-logo { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--color-border-line); background: #FFFFFF; object-fit: cover; flex: none; display: block; }
+.qa-eyebrow { font-size: var(--cds-font-size-caption); letter-spacing: .08em; text-transform: uppercase; color: var(--pw-accent-text); font-weight: 600; }
+.qa-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.15; }
+.qa-fresh { display: inline-flex; align-items: center; gap: 8px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 6px 14px; }
+.qa-fresh::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cat-rockers); flex: none; }
 .qa-filters { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: end; }
 .qa-filters label { display: flex; flex-direction: column; gap: 2px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); min-width: 0; }
-.qa-filters select, .qa-filters input, .qa-search { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); max-width: 100%; }
-.qa-btn { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: transparent; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-md); cursor: pointer; }
+.qa-filters select, .qa-filters input, .qa-search { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 10px; padding: 0 12px; min-height: 44px; box-sizing: border-box; max-width: 100%; }
+.qa-btn { font: inherit; font-size: var(--cds-font-size-body); font-weight: 600; color: var(--color-bg); background: var(--color-fg); border: 1px solid var(--color-fg); border-radius: 10px; padding: 0 18px; min-height: 44px; cursor: pointer; }
 .qa-window { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
 .qa-tabs { display: flex; gap: var(--cds-gap-xs); flex-wrap: wrap; border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-gap-md); }
 .qa-tab { font: inherit; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--color-fg-muted); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; margin-bottom: -1px; }
-.qa-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.qa-tab[aria-selected="true"] { color: var(--color-fg); border-bottom: 3px solid var(--pw-accent); font-weight: 600; }
+.qa-tab { min-height: 44px; }
 .qa-page[hidden] { display: none; }
 .qa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
 .qa-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
-.qa-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+.qa-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 14px; padding: var(--cds-pad-lg); min-width: 0; }
 .qa-card.wide { grid-column: 1 / -1; }
 .qa-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 2px; }
 .qa-note { margin: 0 0 var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
 .kpi-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-.kpi-v { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.25; margin: 4px 0 2px; }
+.kpi-v { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: 2.4rem; line-height: 1.1; margin: 6px 0 4px; }
+#kpi-sigma { background: var(--color-fg); border-color: var(--color-fg); color: var(--color-bg); }
+#kpi-sigma .kpi-l, #kpi-sigma .kpi-d { color: var(--color-bg); opacity: .8; }
 .kpi-d { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); min-height: 1.2em; }
 .good { color: var(--color-ok); } .bad { color: var(--color-bad); } .warn { color: var(--color-warn); }
 .qa-chart { position: relative; min-height: 260px; }
@@ -45,11 +54,14 @@
 .qa-tablewrap { max-width: 100%; }
 .qa-sub { display: block; color: var(--color-fg-muted); }
 .chip { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: var(--cds-font-size-caption); line-height: 1.6; }
-.chip.Rockers { background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); }
-.chip.Movers { background: color-mix(in srgb, var(--cat-movers) 18%, transparent); color: var(--cat-movers); }
-.chip.Levellers { background: color-mix(in srgb, var(--color-warn) 18%, transparent); color: var(--color-warn); }
-.chip.Strugglers { background: color-mix(in srgb, var(--color-bad) 18%, transparent); color: var(--color-bad); }
-.qa { --cat-movers: var(--color-fg-muted); }
+.chip { font-weight: 600; }
+.chip.Rockers { background: color-mix(in srgb, var(--cat-rockers) 16%, transparent); color: var(--cat-rockers); }
+.chip.Movers { background: color-mix(in srgb, var(--cat-movers) 16%, transparent); color: var(--cat-movers); }
+.chip.Levellers { background: color-mix(in srgb, var(--cat-levellers) 18%, transparent); color: #8A5509; }
+.chip.Strugglers { background: color-mix(in srgb, var(--cat-strugglers) 16%, transparent); color: var(--cat-strugglers); }
+.mixbar { display: flex; width: 9rem; height: 10px; border-radius: 5px; overflow: hidden; background: var(--color-border-line); }
+.mixbar span { display: block; }
+.mixnum { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: 3px; }
 .mix { display: inline-flex; gap: 4px; }
 .cbar { display: inline-block; height: 6px; border-radius: 3px; background: var(--color-fg-muted); opacity: .45; vertical-align: middle; margin-left: 6px; }
 .hm td.c { text-align: center; min-width: 3.4rem; }
@@ -69,8 +81,16 @@
 
 <div class="qa">
   <header class="qa-head">
-    <h1 class="qa-title" id="top">Skills team performance audits</h1>
-    <p class="qa-take" id="takeaway" data-source="audits">—</p>
+    <div class="qa-brand" id="top">
+      <div class="qa-brand-id">
+        <img class="qa-logo" alt="Physics Wallah logo" src="data:image/jpeg;base64,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">
+        <div>
+          <div class="qa-eyebrow">PW Skills · Counselling Quality</div>
+          <h1 class="qa-title">Skills Team Performance Audits</h1>
+        </div>
+      </div>
+      <span class="qa-fresh" id="fresh" data-source="audits">Saved copy of Form Responses 1 · refreshes every 2 h</span>
+    </div>
     <div class="qa-filters" id="filters">
       <label>Month <select class="f-month" data-source="audits"></select></label>
       <label>Week <select class="f-week" data-source="audits"></select></label>
@@ -242,8 +262,9 @@
     { id: 'dispo', name: 'Disposition as per NPF', max: 5, k: 'dispo' },
   ];
   const CATS = ['Rockers', 'Movers', 'Levellers', 'Strugglers'];
-  const BAND_COLOR = { Rockers: 'var(--color-ok)', Movers: dash.colors[0], Levellers: 'var(--color-warn)', Strugglers: 'var(--color-bad)' };
-  document.querySelector('.qa').style.setProperty('--cat-movers', dash.colors[0]);
+  const BAND_COLOR = { Rockers: 'var(--cat-rockers)', Movers: 'var(--cat-movers)', Levellers: 'var(--cat-levellers)', Strugglers: 'var(--cat-strugglers)' };
+  const ACCENT = 'var(--pw-accent)'; // PW purple: bars and primary series
+  const LINE = 'var(--pw-line)'; // orange: score lines
 
   const $ = (s) => document.querySelector(s);
   const int = d3.format(',');
@@ -508,25 +529,25 @@
     svg.append('g').selectAll('rect').data(data).join('rect')
       .attr('x', (d) => x(d.d) + (x.bandwidth() - bw) / 2).attr('width', bw)
       .attr('y', (d) => yL(d.n)).attr('height', (d) => yL(0) - yL(d.n)).attr('rx', 4)
-      .attr('fill', dash.colors[0]).attr('opacity', 0.85);
+      .attr('fill', ACCENT).attr('opacity', 0.85);
     const pts = data.filter((d) => d.avg != null);
     svg.append('path').datum(pts)
       .attr('d', d3.line().x((d) => x(d.d) + x.bandwidth() / 2).y((d) => yR(d.avg)))
-      .attr('fill', 'none').attr('stroke', dash.colors[1]).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      .attr('fill', 'none').attr('stroke', LINE).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
     svg.append('g').selectAll('circle').data(pts).join('circle')
-      .attr('cx', (d) => x(d.d) + x.bandwidth() / 2).attr('cy', (d) => yR(d.avg)).attr('r', 3).attr('fill', dash.colors[1]);
+      .attr('cx', (d) => x(d.d) + x.bandwidth() / 2).attr('cy', (d) => yR(d.avg)).attr('r', 3).attr('fill', LINE);
     const tp = tipper(el);
     svg.append('g').selectAll('rect').data(data).join('rect')
       .attr('x', (d) => x(d.d) - (x.step() - x.bandwidth()) / 2).attr('width', x.step()).attr('y', 0).attr('height', h - 28).attr('fill', 'transparent')
       .on('mousemove', (ev, d) => {
         const [mx, my] = d3.pointer(ev, el);
         tp.show(d3.utcFormat('%a, %b %-d')(pDate(d.d)), [
-          { color: dash.colors[0], text: `${int(d.n)} audits` },
-          { color: dash.colors[1], text: `Avg score ${pct1(d.avg)}` },
+          { color: ACCENT, text: `${int(d.n)} audits` },
+          { color: LINE, text: `Avg score ${pct1(d.avg)}` },
         ], mx, my);
       })
       .on('mouseleave', () => tp.hide());
-    legend(el, [{ color: dash.colors[0], label: 'Audits' }, { color: dash.colors[1], label: 'Average QA score', line: true }]);
+    legend(el, [{ color: ACCENT, label: 'Audits' }, { color: LINE, label: 'Average QA score', line: true }]);
   };
 
   const drawBands = (el, agents) => {
@@ -570,7 +591,7 @@
     svg.append('g').selectAll('rect').data(bins).join('rect')
       .attr('x', (b) => x(b.lo) + 2).attr('width', (b) => Math.max(1, x(b.hi) - x(b.lo) - 4))
       .attr('y', (b) => y(b.n)).attr('height', (b) => y(0) - y(b.n)).attr('rx', 4)
-      .attr('fill', (b) => (b.hi <= LSL ? 'var(--cds-chart-status-critical)' : dash.colors[0]))
+      .attr('fill', (b) => (b.hi <= LSL ? 'var(--cds-chart-status-critical)' : ACCENT))
       .on('mousemove', (ev, b) => {
         const [mx, my] = d3.pointer(ev, el);
         tp.show(`${b.lo}–${b.hi}%`, [{ text: `${int(b.n)} audits · ${share(b.n / sc.length)}` }], mx, my);
@@ -603,7 +624,7 @@
     g.append('text').attr('x', lw - 8).attr('y', rowH / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
       .text((d) => d.label).call((s) => fit(s, lw - 10));
     g.append('rect').attr('x', lw).attr('y', 4).attr('height', rowH - 10).attr('rx', 4)
-      .attr('width', (d) => Math.max(2, x(d.value) - lw)).attr('fill', (d, i) => (i === 0 ? dash.colors[0] : 'var(--cds-chart-muted)'));
+      .attr('width', (d) => Math.max(2, x(d.value) - lw)).attr('fill', (d, i) => (i === 0 ? ACCENT : 'var(--cds-chart-muted)'));
     g.append('text').attr('x', (d) => x(d.value) + 6).attr('y', rowH / 2).attr('dy', '0.35em').style('fill', 'var(--color-fg)').text((d) => fmtV(d));
     g.append('rect').attr('x', 0).attr('width', w).attr('height', rowH).attr('fill', 'transparent')
       .on('mousemove', (ev, d) => { const [mx, my] = d3.pointer(ev, el); tp.show(d.label, d.tip || [{ text: `${fmtV(d)} ${label}` }], mx, my); })
@@ -644,19 +665,19 @@
     for (const p of items) { if (!reached) vital.add(p.id); if (p.cum >= 0.8) reached = true; }
     svg.append('g').selectAll('rect').data(items).join('rect')
       .attr('x', (p) => x(p.id) + (x.bandwidth() - bw) / 2).attr('width', bw).attr('y', (p) => y(p.miss)).attr('height', (p) => y(0) - y(p.miss)).attr('rx', 4)
-      .attr('fill', (p) => (vital.has(p.id) ? dash.colors[0] : 'var(--cds-chart-muted)'));
+      .attr('fill', (p) => (vital.has(p.id) ? ACCENT : 'var(--cds-chart-muted)'));
     svg.append('path').datum(items).attr('d', d3.line().x((p) => x(p.id) + x.bandwidth() / 2).y((p) => yR(p.cum)))
-      .attr('fill', 'none').attr('stroke', dash.colors[1]).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
-    svg.append('g').selectAll('circle').data(items).join('circle').attr('cx', (p) => x(p.id) + x.bandwidth() / 2).attr('cy', (p) => yR(p.cum)).attr('r', 3).attr('fill', dash.colors[1]);
+      .attr('fill', 'none').attr('stroke', LINE).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
+    svg.append('g').selectAll('circle').data(items).join('circle').attr('cx', (p) => x(p.id) + x.bandwidth() / 2).attr('cy', (p) => yR(p.cum)).attr('r', 3).attr('fill', LINE);
     const tp = tipper(el);
     svg.append('g').selectAll('rect').data(items).join('rect')
       .attr('x', (p) => x(p.id) - (x.step() - x.bandwidth()) / 2).attr('width', x.step()).attr('y', 0).attr('height', yMaxPx).attr('fill', 'transparent')
       .on('mousemove', (ev, p) => {
         const [mx, my] = d3.pointer(ev, el);
-        tp.show(p.name, [{ color: dash.colors[0], text: `${int(p.miss)} misses · ${share(p.missRate)} of audits` }, { color: dash.colors[1], text: `Running share ${share(p.cum)}` }], mx, my);
+        tp.show(p.name, [{ color: ACCENT, text: `${int(p.miss)} misses · ${share(p.missRate)} of audits` }, { color: LINE, text: `Running share ${share(p.cum)}` }], mx, my);
       })
       .on('mouseleave', () => tp.hide());
-    legend(el, [{ color: dash.colors[0], label: 'Vital few (to 80%)' }, { color: 'var(--cds-chart-muted)', label: 'Useful many' }, { color: dash.colors[1], label: 'Cumulative share', line: true }]);
+    legend(el, [{ color: ACCENT, label: 'Vital few (to 80%)' }, { color: 'var(--cds-chart-muted)', label: 'Useful many' }, { color: LINE, label: 'Cumulative share', line: true }]);
   };
 
   const drawControl = (el, rows) => {
@@ -700,10 +721,10 @@
     const ends = [['UCL', y(last.ucl)], ['Mean', y(cl)], ['LCL', y(last.lcl)]];
     for (let i = 1; i < ends.length; i++) if (ends[i][1] - ends[i - 1][1] < 12) ends[i][1] = ends[i - 1][1] + 12;
     for (const [t, yy] of ends) svg.append('text').attr('x', w - mr + 6).attr('y', yy).attr('dy', '0.35em').text(t);
-    svg.append('path').datum(data).attr('d', d3.line().x((p) => x(p.d)).y((p) => y(p.m))).attr('fill', 'none').attr('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
+    svg.append('path').datum(data).attr('d', d3.line().x((p) => x(p.d)).y((p) => y(p.m))).attr('fill', 'none').attr('stroke', ACCENT).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
     svg.append('g').selectAll('circle.ring').data(data.filter((p) => p.run)).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.m)).attr('r', 7).attr('fill', 'none').attr('stroke', 'var(--color-warn)').attr('stroke-width', 1.5);
     svg.append('g').selectAll('circle.pt').data(data).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.m)).attr('r', (p) => (p.out ? 5 : 3.5))
-      .attr('fill', (p) => (p.out ? 'var(--cds-chart-status-critical)' : dash.colors[0]));
+      .attr('fill', (p) => (p.out ? 'var(--cds-chart-status-critical)' : ACCENT));
     const tp = tipper(el);
     const vor = d3.Delaunay.from(data, (p) => x(p.d), (p) => y(p.m));
     svg.append('rect').attr('x', ml).attr('y', 0).attr('width', w - ml - mr).attr('height', h - 28).attr('fill', 'transparent')
@@ -712,7 +733,7 @@
         const p = data[vor.find(px, py)];
         const [mx, my] = d3.pointer(ev, el);
         tp.show(d3.utcFormat('%a, %b %-d')(pDate(p.d)), [
-          { color: dash.colors[0], text: `Avg ${pct1(p.m)} from ${int(p.n)} audits` },
+          { color: ACCENT, text: `Avg ${pct1(p.m)} from ${int(p.n)} audits` },
           { text: `Limits ${pct1(p.lcl)} – ${pct1(p.ucl)}` },
           ...(p.out ? [{ color: 'var(--cds-chart-status-critical)', text: 'Outside control limits' }] : []),
           ...(p.run ? [{ color: 'var(--color-warn)', text: 'Part of a 7+ day run on one side' }] : []),
@@ -781,9 +802,13 @@
   const scoreCls = (v) => (v == null ? '' : v >= TOP ? 'good' : v < LSL ? 'bad' : '');
   const person = (key) => (td, r) => { const a = r[key]; if (!a) { td.textContent = '—'; return; } two(td, a.name, pct1(a.avg) + ` · ${int(a.scored)} audits`); };
   const mixCell = (td, r) => {
-    const w = document.createElement('span'); w.className = 'mix';
-    for (const b of CATS) { const s = document.createElement('span'); s.className = 'chip ' + b; s.textContent = r.mix[b]; s.title = b; w.append(s); }
-    td.append(w);
+    const total = CATS.reduce((a, b) => a + r.mix[b], 0);
+    if (!total) { td.textContent = '—'; return; }
+    const bar = document.createElement('div'); bar.className = 'mixbar';
+    bar.title = CATS.map((b) => `${b} ${r.mix[b]}`).join(' · ');
+    for (const b of CATS) { if (!r.mix[b]) continue; const s = document.createElement('span'); s.style.flex = String(r.mix[b]); s.style.background = BAND_COLOR[b]; bar.append(s); }
+    const n = document.createElement('div'); n.className = 'mixnum'; n.textContent = CATS.map((b) => r.mix[b]).join(' · ');
+    td.append(bar, n);
   };
   const levelCols = (label, labelRender) => [
     { key: 'label', label, render: labelRender, sortVal: (r) => r.label.toLowerCase() },
@@ -835,7 +860,6 @@
         el.classList.toggle('dash-skeleton', !failed);
         if (failed) { const f = document.createElement('div'); f.className = 'qa-fail'; f.textContent = 'Failed to load'; el.append(f); }
       });
-      $('#takeaway').textContent = '—';
       return;
     }
     charts.forEach((el) => el.classList.remove('dash-skeleton'));
@@ -877,12 +901,8 @@
     const s = summarize(rows), ps = prev ? summarize(prev) : null;
     const sig = sigmaStats(rows);
     const pstats = paramStats(rows.filter((r) => r.score != null));
-    const worst = pstats.filter((x) => x.n).sort((a, b) => b.missRate - a.missRate)[0];
-    $('#takeaway').textContent = s.n
-      ? `${int(s.n)} audits across ${int(s.agents)} counsellors: average QA score ${pct1(s.avg)} with ${share(s.pass)} at or above the 70% pass mark` +
-        (ps && ps.avg != null && s.avg != null ? ` (${s.avg >= ps.avg ? 'up' : 'down'} ${Math.abs(s.avg - ps.avg).toFixed(1)} pts on the prior period)` : '') +
-        (worst ? `. Biggest gap: ${worst.name.toLowerCase()}, missed on ${share(worst.missRate)} of audits.` : '.')
-      : 'No audits in this period. Widen the filters to see data.';
+    const latest = d3.max(all, (r) => r.ts);
+    $('#fresh').textContent = latest ? `Saved copy of Form Responses 1 · latest audit ${d3.utcFormat('%-d %b, %H:%M')(new Date(latest + 'Z'))} · refreshes every 2 h` : 'Saved copy of Form Responses 1 · refreshes every 2 h';
 
     setText('k-audits', int(s.n));
     delta('k-audits-d', s.n, ps?.n, 'n', true, prevLabel);

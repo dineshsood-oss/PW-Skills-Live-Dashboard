@@ -161,7 +161,7 @@
     <div class="qa-grid">
       <div class="qa-card wide" id="card-params" data-source="audits">
         <h2>Quality parameter scorecard</h2>
-        <p class="qa-note">Achievement is the average score as a share of the parameter's weight. A miss is an audit scoring under 60% of the weight. Objection handling is not scored on the form yet, so it is left out.</p>
+        <p class="qa-note">Achievement is the average score as a share of the parameter's weight. A miss is an audit scoring under 60% of the weight. Audits where a parameter is NA don't count toward it, matching how the sheet's Total Score leaves NA parameters out of the 100.</p>
         <div class="qa-tablewrap" id="t-params"></div>
       </div>
       <div class="qa-card" id="card-pareto" data-source="audits">
@@ -205,7 +205,7 @@
       </div>
       <div class="qa-card wide" id="card-method">
         <h2>How to read this lens</h2>
-        <p class="qa-note">Every call audit is a unit; each of its 8 scored parameters plus the fatal-error check is an opportunity for a defect.</p>
+        <p class="qa-note">Every call audit is a unit; each of its 9 parameters that was scored (not NA), plus the fatal-error check, is an opportunity for a defect.</p>
         <div class="qa-explain">
           <div><h3>Specification</h3><p>Lower spec limit (LSL) is the 70% pass mark. Scores have no upper limit, so capability is one-sided.</p></div>
           <div><h3>Ppk</h3><p>(x̄ − LSL) ÷ 3σ, using the period's overall spread. Below 1.0 means a visible share of calls will keep falling under the pass mark.</p></div>
@@ -230,6 +230,7 @@
     { id: 'career', name: 'Career counselling & roadmap', max: 15, k: 'career_k', s: 'career_s' },
     { id: 'need', name: 'Need mapping & product pitch', max: 20, k: 'need_k', s: 'need_s' },
     { id: 'fee', name: 'Fee structure & payment options', max: 5, k: 'fee' },
+    { id: 'obj', name: 'Objection handling', max: 5, k: 'obj_k', s: 'obj_s' },
     { id: 'closing', name: 'Closing', max: 10, k: 'closing_k', s: 'closing_s' },
     { id: 'soft', name: 'Soft skills', max: 15, k: 'soft' },
     { id: 'dispo', name: 'Disposition as per NPF', max: 5, k: 'dispo' },
@@ -601,7 +602,7 @@
     const x = d3.scaleBand(items.map((p) => p.id), [ml, w - mr]).padding(0.25);
     svg.append('g').selectAll('line').data(yR.ticks(4)).join('line')
       .attr('x1', ml).attr('x2', w - mr).attr('y1', yR).attr('y2', yR).attr('stroke', 'var(--cds-chart-grid)');
-    const short = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
+    const short = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', obj: 'Objection', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
     const ax = styleAxis(svg.append('g').attr('transform', `translate(0,${h - 70})`).call(d3.axisBottom(x).tickFormat((id) => short[id]).tickSizeOuter(0)));
     ax.selectAll('text').attr('transform', 'rotate(-35)').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.6em');
     styleAxis(svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(int))).select('.domain').remove();
@@ -944,7 +945,7 @@
         return o;
       });
       const hc = (v) => (v == null ? '' : v >= 0.8 ? 'c g' : v >= 0.6 ? 'c w' : 'c b');
-      const short = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
+      const short = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', obj: 'Objection', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
       table('t-heat', [
         { key: 'name', label: 'Counsellor', render: (td, r) => two(td, r.name, `${r.category || '—'} · ${int(r.scored)} audits`), sortVal: (r) => r.name.toLowerCase() },
         { key: 'avg', label: 'Overall', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },

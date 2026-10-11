@@ -22,10 +22,28 @@ dash.loader('audits', {
       } else cell += ch;
     }
     if (cell || row.length) { row.push(cell); rows.push(row); }
-    const NUM = { intro_k: 46, intro_s: 47, probing_k: 48, probing_s: 49, career_k: 50, career_s: 51, need_k: 52, need_s: 53,
-      fee: 54, obj_k: 55, obj_s: 56, closing_k: 57, closing_s: 58, soft: 59, dispo: 60 };
-    const TEXT = { qa: 1, agent: 2, category: 4, am: 5, stage: 7, source: 8, course: 9, disposition: 33, intent: 34,
-      fatal_error: 35, training: 37, concerning: 61, fatal_flag: 62, agent_name: 68, duration: 13 };
+    const TEXT = { qa: 'Email Address', agent: 'Agent Email ID', category: 'Category', am: 'Category AM Name',
+      stage: 'Lead Stage as per LSQ', source: 'Lead Source', course: 'Course Name*', disposition: 'Lead Disposition Audit Type',
+      intent: 'Intent of the Lead', fatal_error: 'Fatal Error Identified', training: 'Areas of Training Identified',
+      concerning: 'Concerning Flag', fatal_flag: 'Fatal Flag', agent_name: 'Agent name', duration: 'Call Duration' };
+    const NUM = {
+      intro_k: 'Introduction & Purpose of the Call (Keep Doing)', intro_s: 'Introduction & Purpose of the Call (Stop Doing)',
+      probing_k: 'Probing/Rapport Building (Keep Doing)', probing_s: 'Probing/Rapport Building (Stop Doing)',
+      career_k: 'Career Counselling & Roadmap (Keep Doing)', career_s: 'Career Counselling & Roadmap (Stop Doing)',
+      need_k: 'Need Mapping / Product Pitching (Keep Doing)', need_s: 'Need Mapping / Product Pitching (Stop Doing)',
+      fee: 'Fee Structure & Payment Options', obj_k: 'Objection Handling (Keep Doing)', obj_s: 'Objection Handling (Stop Doing)',
+      closing_k: 'Closing (Keep Doing)', closing_s: 'Closing (Stop Doing)', soft: 'Soft Skills (Quality)', dispo: 'Disposition as per NPF' };
+    // The form's answer columns and the score columns share names: text takes the first match, scores the last.
+    const norm = (s) => s.split('\n')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    const head = (rows[0] || []).map(norm);
+    const first = (h) => { const i = head.findIndex((x) => x.startsWith(norm(h))); return i < 0 ? null : i; };
+    const last = (h) => { const i = head.lastIndexOf(norm(h)); return i < 0 ? null : i; };
+    const tcol = Object.fromEntries(Object.entries(TEXT).map(([k, h]) => [k, first(h)]));
+    const ncol = Object.fromEntries(Object.entries(NUM).map(([k, h]) => [k, last(h)]));
+    const scol = last('Total Score') ?? last('Column 65');
+    const missing = ['qa', 'agent', 'category'].filter((k) => tcol[k] == null).concat(scol == null ? ['score'] : []);
+    if (head[0] !== 'timestamp' || missing.length) throw new Error('Unexpected sheet layout, missing: ' + (missing.join(', ') || 'Timestamp'));
+    const get = (r, i) => (i == null ? '' : r[i] || '');
     const num = (v) => {
       const t = (v || '').trim().replace(/%$/, '').replace(/,/g, '');
       return t === '' || isNaN(Number(t)) ? null : Number(t);
@@ -38,12 +56,12 @@ dash.loader('audits', {
       if (!m) continue;
       const date = `${m[3]}-${p2(m[1])}-${p2(m[2])}`;
       const o = { ts: `${date}T${p2(m[4])}:${m[5]}:${m[6]}`, date };
-      for (const [k, i] of Object.entries(TEXT)) o[k] = (r[i] || '').split(/\s+/).filter(Boolean).join(' ');
+      for (const [k, i] of Object.entries(tcol)) o[k] = get(r, i).split(/\s+/).filter(Boolean).join(' ');
       o.qa = o.qa.toLowerCase();
       o.agent = o.agent.toLowerCase();
       o.am = o.am.toLowerCase();
-      o.score = num(r[63]);
-      for (const [k, i] of Object.entries(NUM)) o[k] = num(r[i]);
+      o.score = num(get(r, scol));
+      for (const [k, i] of Object.entries(ncol)) o[k] = num(get(r, i));
       out.push(o);
     }
     return out;

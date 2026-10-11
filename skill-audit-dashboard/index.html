@@ -1,7 +1,7 @@
 <script src="loader.js"></script>
 <style>
 .qa { font-family: var(--font-anthropic-sans); color: var(--color-fg); font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
-.qa { --pw-accent: #5B4FE0; --pw-accent-text: #4B3FCF; --pw-line: #D9682B; --cat-rockers: #1E7A4F; --cat-movers: #2B5FC4; --cat-levellers: #C98A1E; --cat-strugglers: #B5381D; }
+.qa { container: qa / inline-size; --pw-accent: #5B4FE0; --pw-accent-text: #4B3FCF; --pw-line: #D9682B; --cat-rockers: #1E7A4F; --cat-movers: #2B5FC4; --cat-levellers: #C98A1E; --cat-strugglers: #B5381D; }
 .qa-head { display: flex; flex-direction: column; gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
 .qa-brand { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--cds-gap-md); padding-bottom: var(--cds-pad-md); border-bottom: 1px solid var(--color-border-line); }
 .qa-brand-id { display: flex; align-items: center; gap: var(--cds-gap-md); min-width: 0; }
@@ -15,10 +15,37 @@
 .qa-filters select, .qa-filters input, .qa-search { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 10px; padding: 0 12px; min-height: 44px; box-sizing: border-box; max-width: 100%; }
 .qa-btn { font: inherit; font-size: var(--cds-font-size-body); font-weight: 600; color: var(--color-bg); background: var(--color-fg); border: 1px solid var(--color-fg); border-radius: 10px; padding: 0 18px; min-height: 44px; cursor: pointer; }
 .qa-window { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-.qa-tabs { display: flex; gap: var(--cds-gap-xs); flex-wrap: wrap; border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-gap-md); }
-.qa-tab { font: inherit; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--color-fg-muted); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; margin-bottom: -1px; }
-.qa-tab[aria-selected="true"] { color: var(--color-fg); border-bottom: 3px solid var(--pw-accent); font-weight: 600; }
-.qa-tab { min-height: 44px; }
+.qa-shell { display: flex; align-items: flex-start; gap: var(--cds-gap-lg); }
+.qa-main { flex: 1 1 0; min-width: 0; }
+.qa-side { position: sticky; top: var(--cds-gap-md); flex: none; width: 16.5rem; max-height: calc(100vh - 2 * var(--cds-gap-md)); overflow-y: auto; overflow-x: hidden; box-sizing: border-box; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 14px; transition: width 200ms ease; }
+.qa-side.is-collapsed { width: 4rem; }
+.qa-side-top { display: flex; align-items: center; gap: 10px; }
+.qa-side-title { font-weight: 600; white-space: nowrap; }
+.qa-iconbtn { width: 44px; height: 44px; flex: none; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 10px; background: transparent; color: var(--color-fg); cursor: pointer; position: relative; }
+.qa-iconbtn:hover, .qa-tab:hover { background: color-mix(in srgb, var(--color-fg) 6%, transparent); }
+.qa-side svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.qa-group { display: flex; flex-direction: column; gap: 2px; }
+.qa-group-h { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); padding: 4px 10px; white-space: nowrap; }
+.qa-tab { font: inherit; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent; color: var(--color-fg-muted); cursor: pointer; text-align: left; white-space: nowrap; }
+.qa-tab[aria-current="page"] { background: color-mix(in srgb, var(--pw-accent) 14%, transparent); color: var(--pw-accent-text); font-weight: 600; }
+.qa-side .qa-filters { flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 10px; padding: 0 4px; }
+.qa-side .qa-filters label { width: 100%; }
+.qa-side .qa-filters select, .qa-side .qa-filters input { width: 100%; }
+.qa-filter-open { display: none; }
+.qa-badge { position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: var(--pw-accent); color: #FFFFFF; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.qa-badge[hidden] { display: none; }
+.qa-side.is-collapsed .lbl, .qa-side.is-collapsed .qa-side-title, .qa-side.is-collapsed .qa-group-h, .qa-side.is-collapsed .qa-filters { display: none; }
+.qa-side.is-collapsed .qa-tab { width: 44px; padding: 0; justify-content: center; }
+.qa-side.is-collapsed .qa-filter-open { display: inline-flex; }
+.qa-side.is-collapsed { align-items: center; }
+.qa-side :is(button, select, input):focus-visible { outline: 2px solid var(--pw-accent); outline-offset: 2px; }
+@container qa (max-width: 760px) {
+  .qa-shell { flex-direction: column; align-items: stretch; }
+  .qa-side { position: static; width: 100%; max-height: none; }
+  .qa-side.is-collapsed { width: 100%; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .qa-side.is-collapsed .qa-group { flex-direction: row; }
+}
+@media (prefers-reduced-motion: reduce) { .qa-side { transition: none; } }
 .qa-page[hidden] { display: none; }
 .qa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
 .qa-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
@@ -80,6 +107,34 @@
 </style>
 
 <div class="qa">
+<div class="qa-shell">
+  <aside class="qa-side" id="qa-side" aria-label="Dashboard menu">
+    <div class="qa-side-top">
+      <button class="qa-iconbtn" id="qa-menu" type="button" aria-expanded="true" aria-controls="qa-side" aria-label="Collapse menu" title="Collapse menu"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
+      <span class="qa-side-title">Menu</span>
+    </div>
+    <nav class="qa-group" aria-label="Views">
+      <div class="qa-group-h">Views</div>
+        <button class="qa-tab" type="button" data-tab="overview" aria-current="page" aria-label="Overview" title="Overview"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"></rect><rect x="13" y="4" width="7" height="7" rx="1.5"></rect><rect x="4" y="13" width="7" height="7" rx="1.5"></rect><rect x="13" y="13" width="7" height="7" rx="1.5"></rect></svg><span class="lbl">Overview</span></button>
+        <button class="qa-tab" type="button" data-tab="teams" aria-current="false" aria-label="Team levels" title="Team levels"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"></circle><path d="M3.5 19c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"></path><circle cx="17" cy="8" r="2.5"></circle><path d="M16 13.2c2.3.1 4 1.5 4.6 4"></path></svg><span class="lbl">Team levels</span></button>
+        <button class="qa-tab" type="button" data-tab="counsellors" aria-current="false" aria-label="Counsellors" title="Counsellors"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c1-3.5 3.8-5.5 7-5.5s6 2 7 5.5"></path></svg><span class="lbl">Counsellors</span></button>
+        <button class="qa-tab" type="button" data-tab="parameters" aria-current="false" aria-label="Quality parameters" title="Quality parameters"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 7h9M18 7h1M5 12h3M12 12h7M5 17h11M20 17h-1"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="12" r="2"></circle><circle cx="18" cy="17" r="2"></circle></svg><span class="lbl">Quality parameters</span></button>
+        <button class="qa-tab" type="button" data-tab="sigma" aria-current="false" aria-label="Six Sigma lens" title="Six Sigma lens"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 19h18"></path><path d="M4 18c3 0 4-12 8-12s5 12 8 12"></path><path d="M12 6v13" stroke-dasharray="2 2"></path></svg><span class="lbl">Six Sigma lens</span></button>
+    </nav>
+    <div class="qa-group">
+      <div class="qa-group-h">Filters</div>
+      <button class="qa-iconbtn qa-filter-open" id="qa-filter-open" type="button" aria-label="Open filters" title="Open filters"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"></path></svg><span class="qa-badge" id="qa-filter-count" hidden></span></button>
+  <div class="qa-filters" id="filters" role="group" aria-label="Filters">
+      <label>Month <select class="f-month" data-source="audits"></select></label>
+      <label>Week <select class="f-week" data-source="audits"></select></label>
+      <label>From <input class="f-from" type="date" min="2020-01-01" max="2099-12-31"></label>
+      <label>To <input class="f-to" type="date" min="2020-01-01" max="2099-12-31"></label>
+      <label>Category <select class="f-cat" data-source="audits"></select></label>
+      <button class="qa-btn f-reset" type="button">Reset to this month</button>
+    </div>
+    </div>
+  </aside>
+<main class="qa-main">
   <header class="qa-head">
     <div class="qa-brand" id="top">
       <div class="qa-brand-id">
@@ -91,24 +146,9 @@
       </div>
       <span class="qa-fresh" id="fresh" data-source="audits">Saved copy of Form Responses 1 · refreshes every 2 h</span>
     </div>
-    <div class="qa-filters" id="filters">
-      <label>Month <select class="f-month" data-source="audits"></select></label>
-      <label>Week <select class="f-week" data-source="audits"></select></label>
-      <label>From <input class="f-from" type="date" min="2020-01-01" max="2099-12-31"></label>
-      <label>To <input class="f-to" type="date" min="2020-01-01" max="2099-12-31"></label>
-      <label>Category <select class="f-cat" data-source="audits"></select></label>
-      <button class="qa-btn f-reset" type="button">Reset to this month</button>
-    </div>
     <p class="qa-window" id="window"></p>
   </header>
 
-  <nav class="qa-tabs" role="tablist" aria-label="Views">
-    <button class="qa-tab" role="tab" data-tab="overview" aria-selected="true">Overview</button>
-    <button class="qa-tab" role="tab" data-tab="teams" aria-selected="false">Team levels</button>
-    <button class="qa-tab" role="tab" data-tab="counsellors" aria-selected="false">Counsellors</button>
-    <button class="qa-tab" role="tab" data-tab="parameters" aria-selected="false">Quality parameters</button>
-    <button class="qa-tab" role="tab" data-tab="sigma" aria-selected="false">Six Sigma lens</button>
-  </nav>
 
   <section class="qa-page" id="overview">
     <div class="qa-kpis" id="kpis" data-source="audits">
@@ -243,6 +283,8 @@
       </div>
     </div>
   </section>
+</main>
+</div>
 </div>
 
 <script>
@@ -825,12 +867,25 @@
   let current = 'overview';
   const show = (id, link) => {
     current = id;
-    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
+    tabs.forEach((t) => t.setAttribute('aria-current', t.dataset.tab === id ? 'page' : 'false'));
     document.querySelectorAll('.qa-page').forEach((p) => { p.hidden = p.id !== id; });
     if (link) dash.setLink(id);
     draw();
   };
   tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.tab, true)));
+  const side = $('#qa-side'), menuBtn = $('#qa-menu');
+  const setMenu = (open) => {
+    side.classList.toggle('is-collapsed', !open);
+    menuBtn.setAttribute('aria-expanded', String(open));
+    const label = open ? 'Collapse menu' : 'Expand menu';
+    menuBtn.setAttribute('aria-label', label);
+    menuBtn.title = label;
+  };
+  menuBtn.addEventListener('click', () => setMenu(side.classList.contains('is-collapsed')));
+  $('#qa-filter-open').addEventListener('click', () => { setMenu(true); fMonth.focus(); });
+  // charts size to the main column, so redraw once the sidebar has finished resizing
+  side.addEventListener('transitionend', (ev) => { if (ev.propertyName === 'width') draw(); });
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) menuBtn.addEventListener('click', () => draw());
   $('#s-agents').addEventListener('input', () => draw());
   $('#s-heat').addEventListener('input', () => draw());
 
@@ -879,6 +934,11 @@
     fCat.value = p.category;
     if (fFrom !== document.activeElement) fFrom.value = p.from ?? '';
     if (fTo !== document.activeElement) fTo.value = p.to ?? '';
+    const changed = [p.month !== curMonth, p.week !== 'all', !!p.from, !!p.to, p.category !== 'all'].filter(Boolean).length;
+    const badge = $('#qa-filter-count');
+    badge.hidden = !changed;
+    badge.textContent = changed ? String(changed) : '';
+    $('#qa-filter-open').setAttribute('aria-label', changed ? `Open filters, ${changed} changed` : 'Open filters');
 
     const win = windowOf(p, all);
     const rows = all.filter((r) => inCat(r, p) && (p.month === 'all' || r.date.slice(0, 7) === p.month) && (p.week === 'all' || isoWeek(r.date) === p.week) && (!p.from || r.date >= p.from) && (!p.to || r.date <= p.to));

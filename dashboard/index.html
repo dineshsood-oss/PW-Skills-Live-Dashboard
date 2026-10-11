@@ -1,383 +1,992 @@
+<script src="loader.js"></script>
 <style>
-#dash-root { --dash-gutter: clamp(12px, 2.5vw, 28px); }
-.qa { font-family: var(--font-anthropic-sans); color: var(--color-fg); max-width: 1320px; margin-inline: auto; padding-bottom: 48px; }
-.qa * { box-sizing: border-box; }
-.qa-head { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); justify-content: space-between; align-items: flex-end; padding: var(--cds-pad-md) 0 var(--cds-pad-sm); }
-.qa-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.2; }
-.qa-take { margin: 6px 0 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); max-width: 70ch; }
-.qa-fresh { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-.qa-fresh a { color: inherit; }
-.qa-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); background: var(--color-panel); font-weight: 500; }
-.qa-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-.qa-badge.ok { color: var(--color-ok); } .qa-badge.warn { color: var(--color-warn); }
-
-.qa-bar { position: sticky; top: 0; z-index: 5; background: var(--color-bg); border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-gap-md); }
-.qa-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
-.qa-tabs::-webkit-scrollbar { display: none; }
-.qa-tab { appearance: none; border: 0; background: none; font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg-muted); padding: 10px 14px; border-bottom: 2px solid transparent; cursor: pointer; white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; }
-.qa-tab:hover { color: var(--color-fg); }
-.qa-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: 600; }
-.qa-tab .qa-count { font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--color-panel); border: 1px solid var(--color-border-line); font-variant-numeric: tabular-nums; }
-.qa-tab .qa-count.hot { color: #fff; background: #c0392b; border-color: #c0392b; }
-.qa-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm) var(--cds-gap-md); padding: var(--cds-pad-sm) 0; font-size: var(--cds-font-size-caption); }
-.qa-filters label { color: var(--color-fg-muted); display: inline-flex; align-items: center; gap: 6px; }
-.qa select, .qa input[type="search"] { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 5px 8px; max-width: 100%; }
-.qa-seg { display: inline-flex; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; }
-.qa-seg button, .qa-btn, .qa-chip { appearance: none; font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); background: var(--color-panel); border: 0; padding: 5px 10px; cursor: pointer; }
-.qa-seg button + button { border-left: 1px solid var(--color-border-line); }
-.qa-seg button[aria-pressed="true"] { background: var(--color-fg); color: var(--color-bg); }
-.qa-btn { border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); }
-.qa-btn:hover, .qa-chip:hover { color: var(--color-fg); }
-.qa-btn:disabled { opacity: .4; cursor: default; }
-.qa-step { display: inline-flex; gap: 4px; align-items: center; }
-.qa-note { color: var(--color-fg-muted); margin-left: auto; }
-
+.qa { font-family: var(--font-anthropic-sans); color: var(--color-fg); font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+.qa-head { display: flex; flex-direction: column; gap: var(--cds-gap-sm); margin-bottom: var(--cds-gap-md); }
+.qa-title { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; line-height: 1.2; }
+.qa-take { margin: 0; color: var(--color-fg-muted); max-width: 70rem; }
+.qa-filters { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: end; }
+.qa-filters label { display: flex; flex-direction: column; gap: 2px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); min-width: 0; }
+.qa-filters select, .qa-filters input, .qa-search { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); max-width: 100%; }
+.qa-btn { font: inherit; font-size: var(--cds-font-size-body); color: var(--color-fg); background: transparent; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-md); cursor: pointer; }
+.qa-window { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.qa-tabs { display: flex; gap: var(--cds-gap-xs); flex-wrap: wrap; border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-gap-md); }
+.qa-tab { font: inherit; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--color-fg-muted); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; margin-bottom: -1px; }
+.qa-tab[aria-selected="true"] { color: var(--color-fg); border-bottom-color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
 .qa-page[hidden] { display: none; }
-.qa-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
-.qa-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: flex; flex-direction: column; gap: 4px; min-height: 108px; }
-.qa-kpi .k-label { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-.qa-kpi .k-num { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.1; font-variant-numeric: tabular-nums; }
-.qa-kpi .k-num.small { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-heading); font-weight: 500; }
-.qa-kpi .k-delta { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
-.k-delta .good { color: var(--color-ok); } .k-delta .bad { color: var(--color-bad); }
-.qa-kpi.warn { border-left: 3px solid #c0392b; }
-
 .qa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
-.qa-grid.wide { grid-template-columns: minmax(0, 2fr) minmax(min(100%, 20rem), 1fr); }
-@media (max-width: 860px) { .qa-grid.wide { grid-template-columns: 1fr; } }
-.qa-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; margin-bottom: var(--cds-gap-md); }
-.qa-grid > .qa-card { margin-bottom: 0; }
-.qa-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.qa-card .c-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 4px 0 var(--cds-pad-md); }
-.qa-card.accent-red { border-left: 3px solid #c0392b; } .qa-card.accent-green { border-left: 3px solid #2f7d4f; }
-.qa-tag { font-size: 10.5px; font-weight: 500; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); }
-.qa-chart { position: relative; min-height: 280px; }
-.qa-chart.tall { min-height: 420px; }
+.qa-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
+.qa-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+.qa-card.wide { grid-column: 1 / -1; }
+.qa-card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 2px; }
+.qa-note { margin: 0 0 var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.kpi-l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.kpi-v { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.25; margin: 4px 0 2px; }
+.kpi-d { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); min-height: 1.2em; }
+.good { color: var(--color-ok); } .bad { color: var(--color-bad); } .warn { color: var(--color-warn); }
+.qa-chart { position: relative; min-height: 260px; }
+.qa-chart.tall { min-height: 320px; }
 .qa-chart svg { display: block; overflow: visible; }
-.qa-chart svg text { font-family: var(--font-anthropic-sans); }
-.qa-chart .tick text, .qa-axis-label { fill: var(--color-fg-muted); font-size: 11px; }
-.qa-chart .domain { stroke: var(--cds-chart-axis); }
-.qa-chart .grid line { stroke: var(--cds-chart-grid); }
-.qa-clickable { cursor: pointer; }
-.qa-tip { position: absolute; pointer-events: none; z-index: 3; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); min-width: 140px; max-width: 280px; opacity: 0; transition: opacity .12s; }
-.qa-tip .t-head { color: var(--cds-text-secondary); margin-bottom: 3px; }
-.qa-tip .t-row { display: flex; gap: 6px; align-items: center; justify-content: space-between; font-variant-numeric: tabular-nums; }
-.qa-tip .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 4px; }
-.qa-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: 8px; }
-.qa-legend span { display: inline-flex; align-items: center; gap: 5px; }
-.qa-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-.qa-legend i.line { height: 2px; border-radius: 1px; }
-
-.qa-donut { display: flex; gap: var(--cds-gap-md); align-items: center; flex-wrap: wrap; min-height: 240px; }
-.qa-donut svg { flex: 0 0 auto; }
-.qa-donut ul { list-style: none; margin: 0; padding: 0; flex: 1 1 10rem; display: grid; gap: 6px; }
-.qa-donut li { display: grid; grid-template-columns: 12px 1fr auto; gap: 8px; align-items: center; font-size: var(--cds-font-size-caption); padding: 6px 8px; border-radius: var(--cds-radius); cursor: pointer; }
-.qa-donut li:hover { background: var(--color-bg); }
-.qa-donut li i { width: 12px; height: 12px; border-radius: 3px; }
-.qa-donut li b { font-variant-numeric: tabular-nums; font-weight: 600; }
-
-.qa-tablebox { overflow: auto; max-height: 560px; border-top: 1px solid var(--color-border-line); }
-.qa table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); }
-.qa th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: 500; color: var(--color-fg-muted); padding: 8px; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; z-index: 1; }
-.qa th.num, .qa td.num { text-align: right; font-variant-numeric: tabular-nums; }
-.qa th button { appearance: none; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; padding: 0; }
-.qa th[aria-sort="ascending"] button::after { content: ' ↑'; } .qa th[aria-sort="descending"] button::after { content: ' ↓'; }
-.qa td { padding: 7px 8px; border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
-.qa tbody tr.qa-clickable:hover td { background: var(--color-bg); }
-.qa td.wrap { white-space: normal; min-width: 14rem; }
-.qa-meter { display: flex; align-items: center; gap: 8px; min-width: 120px; }
-.qa-meter .track { flex: 1; height: 7px; border-radius: 4px; background: var(--cds-chart-grid); overflow: hidden; }
-.qa-meter .fill { height: 100%; border-radius: 4px; }
-.qa-meter span { font-variant-numeric: tabular-nums; min-width: 3.2em; text-align: right; }
-.qa-ragbar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; min-width: 90px; background: var(--cds-chart-grid); }
-.qa-pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: #fff; letter-spacing: .3px; }
-.qa-pill.red { background: #c0392b; } .qa-pill.amber { background: #c98b06; } .qa-pill.orange { background: #d9662b; } .qa-pill.green { background: #2f7d4f; }
-.qa-pill.esc { background: transparent; color: #c0392b; border: 1px solid #c0392b; }
-.qa-pill.crit { background: transparent; color: var(--color-fg-muted); border: 1px solid var(--color-border-line); font-weight: 500; }
-.qa-toolbar { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; margin-bottom: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); }
-.qa-toolbar input[type="search"] { min-width: 12rem; flex: 1 1 12rem; max-width: 22rem; }
-.qa-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
-.qa-chip { border: 1px solid var(--color-border-line); border-radius: 999px; padding: 3px 10px; }
-.qa-chip[aria-pressed="true"] { background: var(--color-fg); color: var(--color-bg); border-color: var(--color-fg); }
-.qa-picked { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--color-fg); color: var(--color-bg); border: 0; font: inherit; font-size: var(--cds-font-size-caption); cursor: pointer; }
-.qa-picked[hidden] { display: none; }
-
-.qa-group { border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); margin-bottom: var(--cds-gap-sm); overflow: hidden; }
-.qa-group > button { width: 100%; appearance: none; border: 0; background: var(--color-panel); font: inherit; color: inherit; cursor: pointer; display: grid; grid-template-columns: 1fr minmax(120px, 30%) auto; gap: var(--cds-gap-md); align-items: center; padding: 12px 14px; text-align: left; }
-.qa-group > button:hover { background: var(--color-bg); }
-.qa-group .g-name { font-weight: 600; font-size: var(--cds-font-size-body); }
-.qa-group .g-name small { font-weight: 400; color: var(--color-fg-muted); margin-left: 6px; }
-.qa-group .g-num { font-variant-numeric: tabular-nums; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); white-space: nowrap; }
-.qa-group .g-num b { color: var(--color-fg); font-weight: 600; }
-.qa-group > div { padding: 0 14px 10px; }
-.qa-group > div[hidden] { display: none; }
-@media (max-width: 560px) { .qa-group > button { grid-template-columns: 1fr auto; } .qa-group > button .qa-meter { display: none; } }
-
-.qa-alarms { display: grid; gap: var(--cds-gap-sm); }
-.qa-alarm { border: 1px solid var(--color-border-line); border-left: 4px solid #c0392b; border-radius: var(--cds-radius); padding: 12px 14px; background: var(--color-panel); }
-.qa-alarm.medium { border-left-color: #c98b06; }
-.qa-alarm .a-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
-.qa-alarm .a-who { font-weight: 600; font-size: var(--cds-font-size-body); }
-.qa-alarm .a-who small { font-weight: 400; color: var(--color-fg-muted); }
-.qa-alarm .a-meta { font-size: 11.5px; color: var(--color-fg-muted); margin-top: 2px; }
-.qa-alarm ul { margin: 8px 0 0; padding-left: 18px; font-size: var(--cds-font-size-caption); }
-.qa-alarm .a-remark { margin-top: 8px; padding: 8px 10px; background: var(--color-bg); border-radius: var(--cds-radius); font-size: var(--cds-font-size-caption); font-style: italic; }
-.qa-more { margin-top: var(--cds-gap-sm); }
-
-.qa-coach { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: var(--cds-gap-sm); }
-.qa-coachcard { border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
-.qa-coachcard .c-name { display: flex; justify-content: space-between; gap: 8px; font-weight: 600; }
-.qa-coachcard .c-name small { font-weight: 400; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.qa-coachcard .c-miss { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-.qa-coachcard .c-tip { font-size: var(--cds-font-size-caption); background: var(--color-bg); border-radius: var(--cds-radius); padding: 8px 10px; border-left: 3px solid var(--color-fg); }
-.qa-coachcard .c-tip b { display: block; font-size: 10.5px; letter-spacing: .4px; color: var(--color-fg-muted); margin-bottom: 2px; }
-
-.qa-goal { border: 1px solid var(--color-border-line); border-left: 4px solid #2f7d4f; border-radius: var(--cds-radius); padding: 14px 16px; margin-bottom: var(--cds-gap-sm); background: var(--color-panel); }
-.qa-goal.urgent { border-left-color: #c0392b; }
-.qa-goal h3 { margin: 0; font-size: var(--cds-font-size-body); font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.qa-goal p { margin: 4px 0 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
-.qa-goal ul { margin: 8px 0 0; padding-left: 18px; font-size: var(--cds-font-size-caption); }
-.qa-goal li { margin-bottom: 4px; }
-.qa b.n { font-weight: 600; font-variant-numeric: tabular-nums; }
-.qa-empty { padding: 28px; text-align: center; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
-.qa-fail { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); min-height: inherit; }
-.qa-fail::before { content: ''; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
-.qa-foot { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-md); line-height: 1.6; }
+.qa-chart text { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-caption); fill: var(--color-fg-muted); }
+.qa-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; }
+.qa-tip .h { color: var(--cds-text-secondary); margin-bottom: 2px; }
+.qa-tip .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+.qa-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-sm); }
+.qa-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.qa-tablewrap { max-height: 30rem; overflow: auto; border-top: 1px solid var(--color-border-line); }
+.qa-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); }
+.qa-table th { position: sticky; top: 0; background: var(--color-panel); text-align: left; font-weight: var(--cds-font-weight-medium); border-bottom: 1px solid var(--color-border-line); padding: 0; z-index: 1; white-space: nowrap; }
+.qa-table th button { font: inherit; color: var(--color-fg-muted); background: none; border: 0; padding: var(--cds-pad-sm); cursor: pointer; width: 100%; text-align: inherit; }
+.qa-table th.num, .qa-table td.num { text-align: right; }
+.qa-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.qa-table tr:last-child td { border-bottom: 0; }
+.qa-table td.wrap { white-space: normal; min-width: 9rem; }
+.qa-sub { display: block; color: var(--color-fg-muted); }
+.chip { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: var(--cds-font-size-caption); line-height: 1.6; }
+.chip.Top { background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); }
+.chip.Middle { background: color-mix(in srgb, var(--color-warn) 18%, transparent); color: var(--color-warn); }
+.chip.Bottom { background: color-mix(in srgb, var(--color-bad) 18%, transparent); color: var(--color-bad); }
+.mix { display: inline-flex; gap: 4px; }
+.cbar { display: inline-block; height: 6px; border-radius: 3px; background: var(--color-fg-muted); opacity: .45; vertical-align: middle; margin-left: 6px; }
+.hm td.c { text-align: center; min-width: 3.4rem; }
+.hm td.c.g { background: color-mix(in srgb, var(--color-ok) 20%, transparent); }
+.hm td.c.w { background: color-mix(in srgb, var(--color-warn) 20%, transparent); }
+.hm td.c.b { background: color-mix(in srgb, var(--color-bad) 22%, transparent); }
+.qa-toolbar { display: flex; gap: var(--cds-gap-sm); flex-wrap: wrap; margin-bottom: var(--cds-gap-sm); }
+.qa-search { min-width: 0; flex: 1 1 14rem; }
+.qa-explain { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: var(--cds-gap-md); }
+.qa-explain h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0 0 4px; }
+.qa-explain p { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.qa-fail { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.qa-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+.qa-empty { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: 0; }
 [data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
-[data-dash-source-state=empty] { color: transparent; }
-@media (prefers-reduced-motion: no-preference) {
-  .qa-page.enter { animation: qa-in var(--cds-dur-slow) var(--cds-ease-out); }
-  @keyframes qa-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-}
 </style>
 
 <div class="qa">
-  <header class="qa-head" id="top">
-    <div>
-      <h1 id="title">Skill vertical — counsellor QA audit MIS</h1>
-      <p class="qa-take" id="takeaway"><span class="dash-skeleton">Loading audits from the Google Sheet…</span></p>
+  <header class="qa-head">
+    <h1 class="qa-title" id="top">Skills team performance audits</h1>
+    <p class="qa-take" id="takeaway" data-source="audits">—</p>
+    <div class="qa-filters" id="filters">
+      <label>Month <select class="f-month" data-source="audits"></select></label>
+      <label>Week <select class="f-week" data-source="audits"></select></label>
+      <label>From <input class="f-from" type="date" min="2020-01-01" max="2099-12-31"></label>
+      <label>To <input class="f-to" type="date" min="2020-01-01" max="2099-12-31"></label>
+      <label>Category <select class="f-cat" data-source="audits"></select></label>
+      <button class="qa-btn f-reset" type="button">Reset to this month</button>
     </div>
-    <div class="qa-fresh">
-      <span id="d1badge" class="qa-badge dash-skeleton">Checking D-1 upload</span>
-      <span>Last audited: <b data-source="scope_summary" data-field="latest_audited" data-where="scope=all|all|all" id="latestAudited">—</b> · latest enrolment: <b data-source="scope_summary" data-field="latest_date" data-where="scope=all|all|all" id="latest">—</b> · <a href="https://docs.google.com/spreadsheets/d/1waJ54P4ciUFPocZtZ6BEfqnsGKYbDn345ww5Nl_QHGs/edit" target="_blank" rel="noopener">Open audit sheet ↗</a></span>
-    </div>
+    <p class="qa-window" id="window"></p>
   </header>
 
-  <div class="qa-bar">
-    <nav class="qa-tabs" role="tablist" aria-label="Dashboard pages">
-      <button class="qa-tab" role="tab" id="tab-overview" data-page="overview" aria-selected="true">Overview</button>
-      <button class="qa-tab" role="tab" id="tab-parameters" data-page="parameters" aria-selected="false">Parameters</button>
-      <button class="qa-tab" role="tab" id="tab-groups" data-page="groups" aria-selected="false">Parameter groups</button>
-      <button class="qa-tab" role="tab" id="tab-counsellors" data-page="counsellors" aria-selected="false">Counsellors</button>
-      <button class="qa-tab" role="tab" id="tab-alarms" data-page="alarms" aria-selected="false">⚠ Alarms <span class="qa-count hot" id="alarmCount" data-source="scope_summary" data-field="flagged">—</span></button>
-      <button class="qa-tab" role="tab" id="tab-coaching" data-page="coaching" aria-selected="false">Coaching</button>
-      <button class="qa-tab" role="tab" id="tab-plan" data-page="plan" aria-selected="false">Action plan</button>
-    </nav>
-    <div class="qa-filters" id="filters">
-      <label>Month <select id="fMonth" aria-label="Month" data-source="scope_summary"></select></label>
-      <div class="qa-seg" id="fGrain" role="group" aria-label="Period">
-        <button data-g="day" aria-pressed="true">Day on day</button>
-        <button data-g="week" aria-pressed="false">Week on week</button>
-        <button data-g="all" aria-pressed="false">Whole month</button>
-      </div>
-      <span class="qa-step">
-        <button class="qa-btn" id="fPrev" aria-label="Previous period">‹</button>
-        <select id="fBucket" aria-label="Day or week"></select>
-        <button class="qa-btn" id="fNext" aria-label="Next period">›</button>
-      </span>
-      <button class="qa-btn" id="fReset">Reset</button>
-      <span class="qa-note" id="fNote"></span>
-    </div>
-  </div>
+  <nav class="qa-tabs" role="tablist" aria-label="Views">
+    <button class="qa-tab" role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button class="qa-tab" role="tab" data-tab="teams" aria-selected="false">Team levels</button>
+    <button class="qa-tab" role="tab" data-tab="counsellors" aria-selected="false">Counsellors</button>
+    <button class="qa-tab" role="tab" data-tab="parameters" aria-selected="false">Quality parameters</button>
+    <button class="qa-tab" role="tab" data-tab="sigma" aria-selected="false">Six Sigma lens</button>
+  </nav>
 
-  <!-- OVERVIEW -->
-  <section class="qa-page" id="overview" role="tabpanel" aria-labelledby="tab-overview">
-    <div class="qa-kpis" id="ovKpis">
-      <div class="qa-kpi"><span class="k-label">Audits</span><span class="k-num dash-skeleton" data-k="audits">—</span><span class="k-delta" data-d="d_audits"></span></div>
-      <div class="qa-kpi"><span class="k-label">Parameters marked NO</span><span class="k-num dash-skeleton" data-k="total_no">—</span><span class="k-delta">across all parameters audited</span></div>
-      <div class="qa-kpi"><span class="k-label">Avg NO per audit</span><span class="k-num dash-skeleton" data-k="avg_no">—</span><span class="k-delta" data-d="d_avg_no"></span></div>
-      <div class="qa-kpi warn"><span class="k-label">Audits at RED / AMBER</span><span class="k-num dash-skeleton" data-k="risk_pct">—</span><span class="k-delta" data-d="d_risk_pct"></span></div>
-      <div class="qa-kpi"><span class="k-label">Flagged by BOT 2</span><span class="k-num dash-skeleton" data-k="flagged_pct">—</span><span class="k-delta" data-d="d_flagged_pct"></span></div>
-    </div>
-    <div class="qa-grid wide">
-      <div class="qa-card" id="trendCard">
-        <h2 id="trendTitle">Total NO marked &amp; avg NO per audit</h2>
-        <p class="c-note" id="trendNote">Bars: total parameters marked NO per day. Line: average NO per audit.</p>
-        <div class="qa-chart" id="trendChart" data-source="scope_summary"></div>
-        <div class="qa-legend" id="trendLegend"></div>
-      </div>
-      <div class="qa-card" id="ragCard">
-        <h2>Audit risk mix (RAG)</h2>
-        <p class="c-note">From the sheet’s ZTP Category (RED 20+ missed, AMBER 15+, ORANGE 10+, GREEN 0–9). Click a band to see its cases.</p>
-        <div class="qa-donut" id="ragChart" data-source="scope_summary"></div>
-      </div>
+  <section class="qa-page" id="overview">
+    <div class="qa-kpis" id="kpis" data-source="audits">
+      <div class="qa-card" id="kpi-audits"><div class="kpi-l">Audits done</div><div class="kpi-v dash-skeleton" id="k-audits">—</div><div class="kpi-d" id="k-audits-d"></div></div>
+      <div class="qa-card" id="kpi-score"><div class="kpi-l">Average QA score</div><div class="kpi-v dash-skeleton" id="k-score">—</div><div class="kpi-d" id="k-score-d"></div></div>
+      <div class="qa-card" id="kpi-pass"><div class="kpi-l">At or above 70% pass mark</div><div class="kpi-v dash-skeleton" id="k-pass">—</div><div class="kpi-d" id="k-pass-d"></div></div>
+      <div class="qa-card" id="kpi-fatal"><div class="kpi-l">Fatal errors</div><div class="kpi-v dash-skeleton" id="k-fatal">—</div><div class="kpi-d" id="k-fatal-d"></div></div>
+      <div class="qa-card" id="kpi-agents"><div class="kpi-l">Counsellors audited</div><div class="kpi-v dash-skeleton" id="k-agents">—</div><div class="kpi-d" id="k-agents-d"></div></div>
+      <div class="qa-card" id="kpi-sigma"><div class="kpi-l">Process sigma level</div><div class="kpi-v dash-skeleton" id="k-sigma">—</div><div class="kpi-d" id="k-sigma-d"></div></div>
     </div>
     <div class="qa-grid">
-      <div class="qa-card" id="top5Card">
-        <h2>Top 5 most-missed parameters</h2>
-        <p class="c-note">Ranked by NO count; % is of applicable audits (YES + NO, N/A excluded). Click to open Parameters.</p>
-        <table id="top5" data-source="scope_params" data-row-key="row_id">
-          <thead><tr><th data-field="param">Parameter</th><th data-field="group">Group</th><th class="num" data-field="no">NO</th><th data-field="pct_no">% NO</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <div class="qa-card wide" id="card-daily" data-source="audits">
+        <h2>Daily audits and average QA score</h2>
+        <p class="qa-note">Bars count audits submitted each day; the line is that day's average score. Dashed line: 70% pass mark.</p>
+        <div class="qa-chart" id="c-daily"></div>
       </div>
-      <div class="qa-card" id="groupsMiniCard">
-        <h2>Miss rate by parameter group</h2>
-        <p class="c-note">% NO of applicable checks in each of the six template sections.</p>
-        <table id="groupsMini" data-source="scope_groups" data-row-key="row_id">
-          <thead><tr><th data-field="group">Group</th><th class="num" data-field="no">NO</th><th data-field="pct_no">% NO</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <div class="qa-card" id="card-bands" data-source="audits">
+        <h2>Counsellor performance bands</h2>
+        <p class="qa-note">Each counsellor's average score: Top 80%+, Middle 70–80%, Bottom under 70%.</p>
+        <div class="qa-chart" id="c-bands"></div>
       </div>
-    </div>
-  </section>
-
-  <!-- PARAMETERS -->
-  <section class="qa-page" id="parameters" role="tabpanel" aria-labelledby="tab-parameters" hidden>
-    <div class="qa-card" id="paramChartCard">
-      <h2>All parameters — where calls break down</h2>
-      <p class="c-note">NO count per parameter in the selected period; critical compliance parameters in red. Hover for the full name and rates.</p>
-      <div class="qa-toolbar"><span class="qa-seg" id="paramMetric"><button data-m="no" aria-pressed="true">NO count</button><button data-m="pct_no" aria-pressed="false">% NO of applicable</button></span></div>
-      <div class="qa-chart tall" id="paramChart" data-source="scope_params"></div>
-    </div>
-    <div class="qa-card" id="paramTableCard">
-      <h2>Parameter detail</h2>
-      <p class="c-note">Sort by any column; search or pick a group.</p>
-      <div class="qa-toolbar">
-        <input type="search" id="paramSearch" placeholder="Search parameters…" aria-label="Search parameters">
-        <select id="paramGroup" aria-label="Group"><option value="">All groups</option></select>
+      <div class="qa-card" id="card-hist" data-source="audits">
+        <h2>QA score distribution</h2>
+        <p class="qa-note">Audits by score band; red bars fall under the 70% pass mark.</p>
+        <div class="qa-chart" id="c-hist"></div>
       </div>
-      <div class="qa-tablebox">
-        <table id="paramTable" data-source="scope_params" data-row-key="row_id">
-          <thead><tr>
-            <th class="num" data-field="rank"><button data-sort="rank">#</button></th>
-            <th data-field="param"><button data-sort="param">Parameter</button></th>
-            <th data-field="group"><button data-sort="group">Group</button></th>
-            <th class="num" data-field="no"><button data-sort="no">NO</button></th>
-            <th class="num" data-field="yes"><button data-sort="yes">YES</button></th>
-            <th class="num" data-field="na"><button data-sort="na">N/A</button></th>
-            <th class="num" data-field="applicable"><button data-sort="applicable">Applicable</button></th>
-            <th data-field="pct_no"><button data-sort="pct_no">% NO of applicable</button></th>
-            <th data-field="cause"><button data-sort="cause">Root cause</button></th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
+      <div class="qa-card" id="card-topbottom" data-source="audits">
+        <h2>Top and bottom five counsellors</h2>
+        <p class="qa-note">Ranked by average QA score, counsellors with 2+ scored audits.</p>
+        <div id="t-topbottom"></div>
       </div>
     </div>
   </section>
 
-  <!-- GROUPS -->
-  <section class="qa-page" id="groups" role="tabpanel" aria-labelledby="tab-groups" hidden>
-    <div class="qa-card" id="groupsCard">
-      <h2>Top parameters &amp; sub-parameters</h2>
-      <p class="c-note">The six top-level groups of the audit template. Click a group to expand its sub-parameters.</p>
-      <div id="groupBlocks" data-source="scope_groups scope_params"></div>
-    </div>
-  </section>
-
-  <!-- COUNSELLORS -->
-  <section class="qa-page" id="counsellors" role="tabpanel" aria-labelledby="tab-counsellors" hidden>
-    <div class="qa-card" id="counsellorCard">
-      <h2>Counsellor-level audit summary</h2>
-      <p class="c-note">Every counsellor (LC owner) audited in the period, worst average NO first. Click a row to see that counsellor’s flagged cases.</p>
-      <div class="qa-toolbar">
-        <input type="search" id="lcSearch" placeholder="Search counsellor or manager…" aria-label="Search counsellor">
-        <span class="qa-chips" id="lcChips"><button class="qa-chip" data-f="all" aria-pressed="true">All</button><button class="qa-chip" data-f="esc" aria-pressed="false">Escalation list</button><button class="qa-chip" data-f="red" aria-pressed="false">Has a RED audit</button></span>
+  <section class="qa-page" id="teams" hidden>
+    <div class="qa-grid">
+      <div class="qa-card wide" id="card-cat" data-source="audits">
+        <h2>Category level</h2>
+        <p class="qa-note">Band mix counts counsellors in Top · Middle · Bottom bands within each row.</p>
+        <div class="qa-tablewrap" id="t-cat"></div>
       </div>
-      <div class="qa-tablebox">
-        <table id="lcTable" data-source="scope_counsellors" data-row-key="row_id">
-          <thead><tr>
-            <th data-field="lc_owner"><button data-sort="lc_owner">Counsellor</button></th>
-            <th data-field="manager"><button data-sort="manager">Manager</button></th>
-            <th class="num" data-field="audits"><button data-sort="audits">Audits</button></th>
-            <th class="num" data-field="total_no"><button data-sort="total_no">Total NO</button></th>
-            <th class="num" data-field="avg_no"><button data-sort="avg_no">Avg NO / audit</button></th>
-            <th data-field="red"><button data-sort="risk_share">Risk mix</button></th>
-            <th class="num" data-field="fatal"><button data-sort="fatal">FATAL</button></th>
-            <th class="num" data-field="flagged"><button data-sort="flagged">Flagged</button></th>
-            <th data-field="worst_param"><button data-sort="worst_param">Most-missed parameter</button></th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
+      <div class="qa-card wide" id="card-am" data-source="audits">
+        <h2>Category AM level</h2>
+        <p class="qa-note">Grouped by the Category AM on each audit.</p>
+        <div class="qa-tablewrap" id="t-am"></div>
+      </div>
+      <div class="qa-card wide" id="card-qa" data-source="audits">
+        <h2>QA level</h2>
+        <p class="qa-note">Grouped by the auditor's email. Calibration gap is the auditor's average minus the team average: beyond ±5 points suggests scoring drift worth a calibration session.</p>
+        <div class="qa-tablewrap" id="t-qa"></div>
+      </div>
+      <div class="qa-card" id="card-src" data-source="audits">
+        <h2>Audit coverage by lead source</h2>
+        <p class="qa-note">Share of audits drawn from each lead source.</p>
+        <div class="qa-chart tall" id="c-src"></div>
+      </div>
+      <div class="qa-card" id="card-srct" data-source="audits">
+        <h2>Lead source detail</h2>
+        <p class="qa-note">"Not tagged" covers audits with NA or a blank lead source.</p>
+        <div class="qa-tablewrap" id="t-src"></div>
       </div>
     </div>
   </section>
 
-  <!-- ALARMS -->
-  <section class="qa-page" id="alarms" role="tabpanel" aria-labelledby="tab-alarms" hidden>
-    <div class="qa-kpis">
-      <div class="qa-kpi warn"><span class="k-label">Flagged cases</span><span class="k-num dash-skeleton" data-k="flagged">—</span><span class="k-delta">needing QA / TL review</span></div>
-      <div class="qa-kpi"><span class="k-label">% of audited cases flagged</span><span class="k-num dash-skeleton" data-k="flagged_pct">—</span><span class="k-delta" data-d="d_flagged_pct"></span></div>
-      <div class="qa-kpi warn"><span class="k-label">FATAL / Concerning calls</span><span class="k-num dash-skeleton" data-k="fatal">—</span><span class="k-delta">as marked by QA</span></div>
-      <div class="qa-kpi"><span class="k-label">Avg talk time (min)</span><span class="k-num dash-skeleton" data-k="avg_talk_min">—</span><span class="k-delta">TT column</span></div>
-      <div class="qa-kpi"><span class="k-label">Most common trigger</span><span class="k-num small dash-skeleton" data-k="top_trigger">—</span></div>
+  <section class="qa-page" id="counsellors" hidden>
+    <div class="qa-card" id="card-agents" data-source="audits">
+      <h2>Counsellor level</h2>
+      <p class="qa-note">One row per Agent Email ID. Sort any column; search by name, email, category or AM.</p>
+      <div class="qa-toolbar"><input class="qa-search" id="s-agents" type="search" placeholder="Search counsellors" aria-label="Search counsellors"></div>
+      <div class="qa-tablewrap" id="t-agents"></div>
     </div>
-    <div class="qa-card accent-red" id="alarmCard">
-      <h2>BOT 2 — alarming observations <span class="qa-tag">compliance · mis-selling · trust</span></h2>
-      <p class="c-note">Cases the QA marked FATAL/Concerning, or with a RED/AMBER score, a missed critical parameter (placement marks threshold, level packages, 5-opportunity cap, loan tenure, CIBIL impact) or risk language in the QA remark. Review these first.</p>
-      <div class="qa-toolbar">
-        <input type="search" id="alSearch" placeholder="Search name, reg #, course, remark…" aria-label="Search alarms">
-        <select id="alLc" aria-label="Counsellor"><option value="">All counsellors</option></select>
-        <span class="qa-chips" id="alTrig">
-          <button class="qa-chip" data-t="" aria-pressed="true">All triggers</button>
-          <button class="qa-chip" data-t="Marked FATAL/Concerning" aria-pressed="false">FATAL</button>
-          <button class="qa-chip" data-t="Low audit score (RED/AMBER)" aria-pressed="false">Low score</button>
-          <button class="qa-chip" data-t="Critical parameter missed" aria-pressed="false">Critical miss</button>
-          <button class="qa-chip" data-t="Risk language in remarks" aria-pressed="false">Risk remark</button>
-        </span>
-        <span class="qa-chips" id="alRag">
-          <button class="qa-chip" data-r="" aria-pressed="true">Any band</button>
-          <button class="qa-chip" data-r="red" aria-pressed="false">RED</button>
-          <button class="qa-chip" data-r="amber" aria-pressed="false">AMBER</button>
-          <button class="qa-chip" data-r="orange" aria-pressed="false">ORANGE</button>
-          <button class="qa-chip" data-r="green" aria-pressed="false">GREEN</button>
-        </span>
-        <span class="qa-note" id="alShown"></span>
+  </section>
+
+  <section class="qa-page" id="parameters" hidden>
+    <div class="qa-grid">
+      <div class="qa-card wide" id="card-params" data-source="audits">
+        <h2>Quality parameter scorecard</h2>
+        <p class="qa-note">Achievement is the average score as a share of the parameter's weight. A miss is an audit scoring under 60% of the weight. Objection handling is not scored on the form yet, so it is left out.</p>
+        <div class="qa-tablewrap" id="t-params"></div>
       </div>
-      <div class="qa-alarms" id="alarmList" data-source="audits_scored"></div>
-      <button class="qa-btn qa-more" id="alMore" hidden>Show more</button>
+      <div class="qa-card" id="card-pareto" data-source="audits">
+        <h2>Pareto of parameter misses</h2>
+        <p class="qa-note">Bars count misses; the line is the running share. Parameters left of the 80% line drive most of the gap.</p>
+        <div class="qa-chart tall" id="c-pareto"></div>
+      </div>
+      <div class="qa-card" id="card-train" data-source="audits">
+        <h2>Training areas identified</h2>
+        <p class="qa-note">How often auditors flagged each training need.</p>
+        <div class="qa-chart tall" id="c-train"></div>
+      </div>
+      <div class="qa-card wide" id="card-heat" data-source="audits">
+        <h2>Individual scoring by parameter</h2>
+        <p class="qa-note">Each counsellor's achievement per parameter. Green 80%+, amber 60–80%, red under 60%.</p>
+        <div class="qa-toolbar"><input class="qa-search" id="s-heat" type="search" placeholder="Search counsellors" aria-label="Search counsellors in parameter grid"></div>
+        <div class="qa-tablewrap" id="t-heat"></div>
+      </div>
     </div>
   </section>
 
-  <!-- COACHING -->
-  <section class="qa-page" id="coaching" role="tabpanel" aria-labelledby="tab-coaching" hidden>
-    <div class="qa-card" id="paretoCard">
-      <h2>Where to spend training time <span class="qa-tag">Pareto 80/20</span></h2>
-      <p class="c-note" id="paretoNote">Parameters ranked by NO count with the running share of all NOs; the ones above the line make up 80% of misses.</p>
-      <div class="qa-chart tall" id="paretoChart" data-source="scope_params"></div>
+  <section class="qa-page" id="sigma" hidden>
+    <div class="qa-kpis" id="sigma-kpis" data-source="audits">
+      <div class="qa-card"><div class="kpi-l">Mean score (x̄)</div><div class="kpi-v" id="z-mean">—</div><div class="kpi-d" id="z-mean-d"></div></div>
+      <div class="qa-card"><div class="kpi-l">Spread (σ)</div><div class="kpi-v" id="z-sd">—</div><div class="kpi-d" id="z-sd-d"></div></div>
+      <div class="qa-card"><div class="kpi-l">Capability Ppk</div><div class="kpi-v" id="z-ppk">—</div><div class="kpi-d" id="z-ppk-d"></div></div>
+      <div class="qa-card"><div class="kpi-l">DPMO</div><div class="kpi-v" id="z-dpmo">—</div><div class="kpi-d" id="z-dpmo-d"></div></div>
+      <div class="qa-card"><div class="kpi-l">Sigma level</div><div class="kpi-v" id="z-sigma">—</div><div class="kpi-d" id="z-sigma-d"></div></div>
+      <div class="qa-card"><div class="kpi-l">Rolled throughput yield</div><div class="kpi-v" id="z-rty">—</div><div class="kpi-d" id="z-rty-d"></div></div>
     </div>
-    <div class="qa-card" id="causeCard">
-      <h2>Root-cause view <span class="qa-tag">cause &amp; effect</span></h2>
-      <p class="c-note">Is the fix a script change, a knowledge refresh, a habit/discipline issue or a compliance-disclosure gap?</p>
-      <table id="causeTable" data-source="scope_causes" data-row-key="row_id">
-        <thead><tr><th data-field="cause">Root-cause bucket</th><th class="num" data-field="no">NO</th><th data-field="share">Share of NOs</th><th data-field="params">Parameters driving it</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div class="qa-card" id="coachCard">
-      <h2>Per-counsellor coaching cards</h2>
-      <p class="c-note">The six counsellors with the highest average NO in the period, each with one focus area so coaching stays specific.</p>
-      <div class="qa-coach" id="coachList" data-source="scope_counsellors"></div>
-    </div>
-  </section>
-
-  <!-- ACTION PLAN -->
-  <section class="qa-page" id="plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
-    <div class="qa-kpis">
-      <div class="qa-kpi"><span class="k-label">Avg NO per audit</span><span class="k-num dash-skeleton" data-k="avg_no">—</span><span class="k-delta" data-d="d_avg_no"></span></div>
-      <div class="qa-kpi warn"><span class="k-label">Audits at RED / AMBER</span><span class="k-num dash-skeleton" data-k="risk_pct">—</span><span class="k-delta" data-d="d_risk_pct"></span></div>
-      <div class="qa-kpi"><span class="k-label">#1 root-cause driver</span><span class="k-num small dash-skeleton" data-k="top_cause">—</span></div>
-      <div class="qa-kpi"><span class="k-label">Counsellors for escalation</span><span class="k-num dash-skeleton" data-k="escalations">—</span></div>
-    </div>
-    <div class="qa-card accent-green" id="planIntro">
-      <h2>BOT 3 — plan of action <span class="qa-tag">live</span></h2>
-      <p class="c-note">Regenerated from the selected period every time new D-1 audits land in the sheet. At each weekly / month-end review, copy these readings into the POA workbook so Status and Target rating stay on record.</p>
-      <div id="goalCards" data-source="scope_summary scope_params scope_counsellors scope_causes"></div>
+    <div class="qa-grid">
+      <div class="qa-card wide" id="card-control" data-source="audits">
+        <h2>Control chart: daily average QA score</h2>
+        <p class="qa-note">Centre line is the period mean; limits are ±3σ/√n for each day's audit count. Red points sit outside the limits; ringed points are part of a run of 7+ days on one side of the mean. Both signal a special cause to investigate.</p>
+        <div class="qa-chart tall" id="c-control"></div>
+      </div>
+      <div class="qa-card wide" id="card-capcat" data-source="audits">
+        <h2>Capability by category</h2>
+        <p class="qa-note">Ppk 1.33+ is capable, 1.0–1.33 marginal, under 1.0 not capable; a negative Ppk means the average itself is under the pass mark.</p>
+        <div class="qa-tablewrap" id="t-capcat"></div>
+      </div>
+      <div class="qa-card wide" id="card-method">
+        <h2>How to read this lens</h2>
+        <p class="qa-note">Every call audit is a unit; each of its 8 scored parameters plus the fatal-error check is an opportunity for a defect.</p>
+        <div class="qa-explain">
+          <div><h3>Specification</h3><p>Lower spec limit (LSL) is the 70% pass mark. Scores have no upper limit, so capability is one-sided.</p></div>
+          <div><h3>Ppk</h3><p>(x̄ − LSL) ÷ 3σ, using the period's overall spread. Below 1.0 means a visible share of calls will keep falling under the pass mark.</p></div>
+          <div><h3>Defect and DPMO</h3><p>A defect is a parameter scored under 60% of its weight, or a fatal error. DPMO = defects ÷ opportunities × 1,000,000.</p></div>
+          <div><h3>Sigma level</h3><p>Short-term sigma from DPMO with the customary 1.5σ shift. 3σ ≈ 66,800 DPMO; 4σ ≈ 6,210; 6σ ≈ 3.4.</p></div>
+          <div><h3>Rolled throughput yield</h3><p>The chance a call clears every parameter first time: the product of each parameter's pass rate.</p></div>
+          <div><h3>Act on it (DMAIC)</h3><p>Use the Pareto to pick the vital few parameters, the control chart to spot special causes, and the QA calibration gap to keep the measurement system honest.</p></div>
+        </div>
+      </div>
     </div>
   </section>
-
-  <p class="qa-foot" id="foot">Source: one tab per month in the Google Sheet (e.g. <i>Oct-2026</i>), in the QA team’s audit format (merged group / parameter header rows are read automatically). The QA team appends the previous day’s (D-1) audits each morning; the dashboard copies every tab from the sheet every 2 hours (10 am–10 pm IST), so anyone with the dashboard link sees the data without a Google login. Periods follow the Enrolment date; the D-1 check uses Audited Date. New month → copy the last tab, rename it, clear the audit rows.</p>
 </div>
 
-<script src="calcs.js"></script>
-<script src="app.js"></script>
+<script>
+(() => {
+  const LSL = 70; // pass mark, % QA score
+  const TOP = 80; // top band starts here
+  const CTQ = 0.6; // a parameter under 60% of its weight is a defect
+  const PARAMS = [
+    { id: 'intro', name: 'Introduction & purpose', max: 10, k: 'intro_k', s: 'intro_s' },
+    { id: 'probing', name: 'Probing & rapport', max: 15, k: 'probing_k', s: 'probing_s' },
+    { id: 'career', name: 'Career counselling & roadmap', max: 15, k: 'career_k', s: 'career_s' },
+    { id: 'need', name: 'Need mapping & product pitch', max: 20, k: 'need_k', s: 'need_s' },
+    { id: 'fee', name: 'Fee structure & payment options', max: 5, k: 'fee' },
+    { id: 'closing', name: 'Closing', max: 10, k: 'closing_k', s: 'closing_s' },
+    { id: 'soft', name: 'Soft skills', max: 15, k: 'soft' },
+    { id: 'dispo', name: 'Disposition as per NPF', max: 5, k: 'dispo' },
+  ];
+  const BAND_COLOR = { Top: 'var(--color-ok)', Middle: 'var(--color-warn)', Bottom: 'var(--color-bad)' };
+
+  const $ = (s) => document.querySelector(s);
+  const int = d3.format(',');
+  const pct1 = (v) => (v == null || !isFinite(v) ? '—' : v.toFixed(1) + '%');
+  const share = (v) => (v == null || !isFinite(v) ? '—' : d3.format('.1%')(v));
+  const dayFmt = d3.utcFormat('%b %-d');
+  const pDate = (s) => new Date(s + 'T00:00:00Z');
+  const iso = d3.utcFormat('%Y-%m-%d');
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const curMonth = today.slice(0, 7);
+  const monthLabel = (m) => d3.utcFormat("%b '%y")(pDate(m + '-01'));
+  const monthEnd = (m) => iso(d3.utcDay.offset(d3.utcMonth.offset(pDate(m + '-01'), 1), -1));
+  const isoWeek = (s) => {
+    const d = pDate(s);
+    d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+    const y = d.getUTCFullYear();
+    const w = 1 + Math.floor((d - Date.UTC(y, 0, 1)) / 864e5 / 7);
+    return `${y}-W${String(w).padStart(2, '0')}`;
+  };
+  const weekRange = (key) => {
+    const [y, w] = key.split('-W').map(Number);
+    const jan4 = new Date(Date.UTC(y, 0, 4));
+    const mon = d3.utcDay.offset(jan4, -((jan4.getUTCDay() + 6) % 7) + (w - 1) * 7);
+    return [iso(mon), iso(d3.utcDay.offset(mon, 6))];
+  };
+  const weekLabel = (key) => {
+    const [a, b] = weekRange(key);
+    return `W${key.split('-W')[1]} · ${dayFmt(pDate(a))}–${dayFmt(pDate(b))}`;
+  };
+  const prettyEmail = (e) =>
+    !e ? 'Not tagged' : e.split('@')[0].replace(/[0-9]+$/, '').split(/[._]/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
+  const band = (avg) => (avg == null ? null : avg >= TOP ? 'Top' : avg >= LSL ? 'Middle' : 'Bottom');
+  const mean = (a) => (a.length ? d3.mean(a) : null);
+  const isFatal = (r) =>
+    r.fatal_flag === 'Fatal' || (!!r.fatal_error && r.fatal_error !== 'NA' && !/^No Fatal Issue Identified$/i.test(r.fatal_error));
+  const paramScore = (r, p) => {
+    const k = r[p.k], s = p.s ? r[p.s] : null;
+    if (k == null && s == null) return null;
+    return (k || 0) + (s || 0);
+  };
+  const srcLabel = (s) => {
+    const t = (s || '').trim();
+    return !t || /^na$/i.test(t) || t === 'Other:' ? 'Not tagged' : t;
+  };
+
+  // Acklam's inverse normal CDF
+  const normInv = (p) => {
+    const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+    const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+    const c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+    const d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+    const pl = 0.02425;
+    if (p <= 0) return -Infinity;
+    if (p >= 1) return Infinity;
+    if (p < pl) {
+      const q = Math.sqrt(-2 * Math.log(p));
+      return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    }
+    if (p > 1 - pl) {
+      const q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    }
+    const q = p - 0.5, r = q * q;
+    return ((((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q) / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+  };
+
+  // ---------- filters ----------
+  const setDefaults = () => dash.setParams({ month: curMonth, week: 'all', from: null, to: null, category: 'all' });
+  setDefaults();
+  const P = () => ({ month: 'all', week: 'all', from: null, to: null, category: 'all', ...dash.params() });
+
+  const fMonth = $('.f-month'), fWeek = $('.f-week'), fFrom = $('.f-from'), fTo = $('.f-to'), fCat = $('.f-cat');
+  fMonth.addEventListener('change', () => dash.setParams({ month: fMonth.value, week: 'all' }));
+  fWeek.addEventListener('change', () => dash.setParams({ week: fWeek.value }));
+  fCat.addEventListener('change', () => dash.setParams({ category: fCat.value }));
+  for (const [el, name] of [[fFrom, 'from'], [fTo, 'to']]) {
+    el.addEventListener('change', () => {
+      if (!el.value) dash.setParams({ [name]: null });
+      else if (el.validity.valid) dash.setParams({ [name]: el.value });
+    });
+    el.addEventListener('blur', () => { el.value = P()[name] ?? ''; });
+  }
+  $('.f-reset').addEventListener('click', () => { dash.resetParams(); setDefaults(); });
+
+  const windowOf = (p, rows) => {
+    let s = null, e = null;
+    const lo = (a, b) => (a == null ? b : b == null ? a : a > b ? a : b);
+    const hi = (a, b) => (a == null ? b : b == null ? a : a < b ? a : b);
+    if (p.month !== 'all') { s = p.month + '-01'; e = monthEnd(p.month); }
+    if (p.week !== 'all') { const [a, b] = weekRange(p.week); s = lo(s, a); e = hi(e, b); }
+    if (p.from) s = lo(s, p.from);
+    if (p.to) e = hi(e, p.to);
+    if (s == null && e == null) return null;
+    if (s == null) s = d3.min(rows, (r) => r.date) || today;
+    e = hi(e ?? today, today);
+    return [s, e];
+  };
+  const inCat = (r, p) => p.category === 'all' || r.category === p.category;
+  const inWin = (r, w) => !w || (r.date >= w[0] && r.date <= w[1]);
+
+  // ---------- aggregation ----------
+  const summarize = (rows) => {
+    const scored = rows.filter((r) => r.score != null);
+    const sc = scored.map((r) => r.score);
+    return {
+      n: rows.length,
+      scored: scored.length,
+      avg: mean(sc),
+      sd: sc.length > 1 ? d3.deviation(sc) : null,
+      pass: sc.length ? sc.filter((v) => v >= LSL).length / sc.length : null,
+      fatal: rows.filter(isFatal).length,
+      agents: new Set(rows.map((r) => r.agent)).size,
+      min: d3.min(sc),
+      max: d3.max(sc),
+    };
+  };
+  let nameOf = new Map();
+  const agentName = (a) => nameOf.get(a) || prettyEmail(a);
+  const byAgent = (rows) =>
+    d3.groups(rows, (r) => r.agent).map(([agent, rs]) => {
+      const s = summarize(rs);
+      const last = rs.reduce((a, b) => (a.ts > b.ts ? a : b));
+      return { agent, name: agentName(agent), category: last.category, am: last.am, ...s, band: band(s.avg) };
+    });
+  const levelRows = (rows, keyFn, labelFn) =>
+    d3.groups(rows, keyFn).map(([key, rs]) => {
+      const s = summarize(rs);
+      const ag = byAgent(rs).filter((a) => a.avg != null);
+      const top = d3.greatest(ag, (a) => a.avg + a.scored / 1e4);
+      const bottom = d3.least(ag, (a) => a.avg - a.scored / 1e4);
+      const mix = { Top: 0, Middle: 0, Bottom: 0 };
+      ag.forEach((a) => mix[a.band]++);
+      return { key, label: labelFn(key), ...s, top, bottom, mix };
+    });
+  const paramStats = (rows) =>
+    PARAMS.map((p) => {
+      const vals = rows.map((r) => paramScore(r, p)).filter((v) => v != null);
+      const stops = rows.filter((r) => p.s && r[p.s] != null && r[p.s] < 0).length;
+      const miss = vals.filter((v) => v < p.max * CTQ).length;
+      return {
+        ...p,
+        n: vals.length,
+        avg: mean(vals),
+        ach: vals.length ? d3.mean(vals) / p.max : null,
+        miss,
+        missRate: vals.length ? miss / vals.length : null,
+        stopRate: vals.length && p.s ? stops / vals.length : null,
+      };
+    });
+  const sigmaStats = (rows) => {
+    const scored = rows.filter((r) => r.score != null);
+    const sc = scored.map((r) => r.score);
+    const m = mean(sc), sd = sc.length > 1 ? d3.deviation(sc) : null;
+    const ps = paramStats(scored);
+    const opps = d3.sum(ps, (p) => p.n) + scored.length;
+    const defects = d3.sum(ps, (p) => p.miss) + scored.filter(isFatal).length;
+    const dpmo = opps ? (defects / opps) * 1e6 : null;
+    const sigma = dpmo == null ? null : dpmo <= 3.4 ? 6 : normInv(1 - dpmo / 1e6) + 1.5;
+    const rty = ps.every((p) => p.n) ? ps.reduce((a, p) => a * (1 - p.missRate), 1) : null;
+    const ftr = scored.length
+      ? scored.filter((r) => !isFatal(r) && PARAMS.every((p) => { const v = paramScore(r, p); return v == null || v >= p.max * CTQ; })).length / scored.length
+      : null;
+    return { n: scored.length, mean: m, sd, ppk: sd ? (m - LSL) / (3 * sd) : null, dpmo, sigma, rty, ftr, opps, defects, ps };
+  };
+
+  // ---------- drawing helpers ----------
+  const clear = (el) => { el.querySelectorAll('svg, .qa-tip, .qa-legend, .qa-fail, .qa-empty').forEach((n) => n.remove()); };
+  const empty = (el, msg) => { clear(el); const p = document.createElement('p'); p.className = 'qa-empty'; p.textContent = msg; el.append(p); };
+  const tipper = (el) => {
+    const t = document.createElement('div');
+    t.className = 'qa-tip';
+    t.hidden = true;
+    el.append(t);
+    return {
+      show(head, lines, x, y) {
+        t.replaceChildren();
+        const h = document.createElement('div'); h.className = 'h'; h.textContent = head; t.append(h);
+        for (const l of lines) {
+          const row = document.createElement('div');
+          if (l.color) { const sw = document.createElement('span'); sw.className = 'sw'; sw.style.background = l.color; row.append(sw); }
+          row.append(document.createTextNode(l.text));
+          t.append(row);
+        }
+        t.hidden = false;
+        const W = el.clientWidth, tw = t.offsetWidth, th = t.offsetHeight;
+        t.style.left = Math.max(0, Math.min(W - tw, x + 12)) + 'px';
+        t.style.top = Math.max(0, y - th - 8) + 'px';
+      },
+      hide() { t.hidden = true; },
+    };
+  };
+  const measure = (svg, texts) => {
+    const t = svg.append('text').attr('visibility', 'hidden');
+    let w = 0;
+    for (const s of texts) w = Math.max(w, t.text(s).node().getComputedTextLength());
+    t.remove();
+    return w;
+  };
+  const styleAxis = (g) => {
+    g.attr('font-size', null).attr('font-family', null);
+    g.selectAll('.domain').attr('stroke', 'var(--cds-chart-axis)');
+    g.selectAll('.tick line').attr('stroke', 'var(--cds-chart-axis)');
+    return g;
+  };
+  const svgFor = (el, h) => {
+    const w = Math.max(240, el.clientWidth);
+    const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`).attr('height', h);
+    return { svg, w, h };
+  };
+  const legend = (el, items) => {
+    const lg = document.createElement('div');
+    lg.className = 'qa-legend';
+    for (const it of items) {
+      const s = document.createElement('span');
+      const i = document.createElement('i');
+      i.style.background = it.color;
+      if (it.line) { i.style.height = '2px'; i.style.verticalAlign = '3px'; }
+      s.append(i, document.createTextNode(it.label));
+      lg.append(s);
+    }
+    el.append(lg);
+  };
+
+  const drawDaily = (el, rows, win) => {
+    clear(el);
+    if (!rows.length) return empty(el, 'No audits in this period.');
+    const [s, e] = win || [d3.min(rows, (r) => r.date), d3.max(rows, (r) => r.date)];
+    const days = d3.utcDays(pDate(s), d3.utcDay.offset(pDate(e), 1)).map(iso);
+    const g = d3.group(rows, (r) => r.date);
+    const data = days.map((d) => {
+      const rs = g.get(d) || [];
+      const sc = rs.filter((r) => r.score != null).map((r) => r.score);
+      return { d, n: rs.length, avg: mean(sc) };
+    });
+    const { svg, w, h } = svgFor(el, 260);
+    const yL = d3.scaleLinear([0, d3.max(data, (x) => x.n) || 1], [h - 28, 12]).nice();
+    const yR = d3.scaleLinear([0, 100], [h - 28, 12]);
+    const ml = measure(svg, yL.ticks(4).map(int)) + 10, mr = measure(svg, ['100%']) + 10;
+    const x = d3.scaleBand(days, [ml, w - mr]).padding(0.25);
+    svg.append('g').selectAll('line').data(yR.ticks(4)).join('line')
+      .attr('x1', ml).attr('x2', w - mr).attr('y1', yR).attr('y2', yR).attr('stroke', 'var(--cds-chart-grid)');
+    const every = Math.max(1, Math.ceil(days.length / Math.max(2, Math.floor((w - ml - mr) / 56))));
+    styleAxis(svg.append('g').attr('transform', `translate(0,${h - 28})`)
+      .call(d3.axisBottom(x).tickValues(days.filter((_, i) => i % every === 0)).tickFormat((d) => dayFmt(pDate(d))).tickSizeOuter(0)));
+    styleAxis(svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(yL).ticks(4).tickFormat(int))).select('.domain').remove();
+    styleAxis(svg.append('g').attr('transform', `translate(${w - mr},0)`).call(d3.axisRight(yR).ticks(4).tickFormat((v) => v + '%'))).select('.domain').remove();
+    svg.append('line').attr('x1', ml).attr('x2', w - mr).attr('y1', yR(LSL)).attr('y2', yR(LSL))
+      .attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4');
+    const bw = Math.min(32, x.bandwidth());
+    svg.append('g').selectAll('rect').data(data).join('rect')
+      .attr('x', (d) => x(d.d) + (x.bandwidth() - bw) / 2).attr('width', bw)
+      .attr('y', (d) => yL(d.n)).attr('height', (d) => yL(0) - yL(d.n)).attr('rx', 4)
+      .attr('fill', dash.colors[0]).attr('opacity', 0.85);
+    const pts = data.filter((d) => d.avg != null);
+    svg.append('path').datum(pts)
+      .attr('d', d3.line().x((d) => x(d.d) + x.bandwidth() / 2).y((d) => yR(d.avg)))
+      .attr('fill', 'none').attr('stroke', dash.colors[1]).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+    svg.append('g').selectAll('circle').data(pts).join('circle')
+      .attr('cx', (d) => x(d.d) + x.bandwidth() / 2).attr('cy', (d) => yR(d.avg)).attr('r', 3).attr('fill', dash.colors[1]);
+    const tp = tipper(el);
+    svg.append('g').selectAll('rect').data(data).join('rect')
+      .attr('x', (d) => x(d.d) - (x.step() - x.bandwidth()) / 2).attr('width', x.step()).attr('y', 0).attr('height', h - 28).attr('fill', 'transparent')
+      .on('mousemove', (ev, d) => {
+        const [mx, my] = d3.pointer(ev, el);
+        tp.show(d3.utcFormat('%a, %b %-d')(pDate(d.d)), [
+          { color: dash.colors[0], text: `${int(d.n)} audits` },
+          { color: dash.colors[1], text: `Avg score ${pct1(d.avg)}` },
+        ], mx, my);
+      })
+      .on('mouseleave', () => tp.hide());
+    legend(el, [{ color: dash.colors[0], label: 'Audits' }, { color: dash.colors[1], label: 'Average QA score', line: true }]);
+  };
+
+  const drawBands = (el, agents) => {
+    clear(el);
+    const counts = ['Top', 'Middle', 'Bottom'].map((b) => ({ b, n: agents.filter((a) => a.band === b).length }));
+    const total = d3.sum(counts, (c) => c.n);
+    if (!total) return empty(el, 'No scored audits in this period.');
+    const { svg, w, h } = svgFor(el, 220);
+    const r = Math.min(h / 2 - 8, w / 2 - 8);
+    const g = svg.append('g').attr('transform', `translate(${w / 2},${h / 2})`);
+    const arcs = d3.pie().sort(null).value((d) => d.n)(counts);
+    const tp = tipper(el);
+    g.selectAll('path').data(arcs).join('path')
+      .attr('d', d3.arc().innerRadius(r * 0.62).outerRadius(r).padAngle(0.015).cornerRadius(3))
+      .attr('fill', (d) => BAND_COLOR[d.data.b])
+      .on('mousemove', (ev, d) => {
+        const [mx, my] = d3.pointer(ev, el);
+        tp.show(`${d.data.b} band`, [{ text: `${int(d.data.n)} counsellors · ${share(d.data.n / total)}` }], mx, my);
+      })
+      .on('mouseleave', () => tp.hide());
+    g.append('text').attr('text-anchor', 'middle').attr('dy', '-0.1em').style('font-family', 'var(--font-anthropic-serif)')
+      .style('font-size', 'var(--cds-font-size-title)').style('fill', 'var(--color-fg)').text(int(total));
+    g.append('text').attr('text-anchor', 'middle').attr('dy', '1.4em').text('counsellors');
+    legend(el, counts.map((c) => ({ color: BAND_COLOR[c.b], label: `${c.b} ${int(c.n)} (${share(c.n / total)})` })));
+  };
+
+  const drawHist = (el, rows) => {
+    clear(el);
+    const sc = rows.filter((r) => r.score != null).map((r) => r.score);
+    if (!sc.length) return empty(el, 'No scored audits in this period.');
+    const bins = d3.range(0, 100, 10).map((lo) => ({ lo, hi: lo + 10, n: sc.filter((v) => v >= lo && (lo === 90 ? v <= 100 : v < lo + 10)).length }));
+    const { svg, w, h } = svgFor(el, 240);
+    const y = d3.scaleLinear([0, d3.max(bins, (b) => b.n) || 1], [h - 28, 14]).nice();
+    const ml = measure(svg, y.ticks(4).map(int)) + 10;
+    const x = d3.scaleLinear([0, 100], [ml, w - 8]);
+    svg.append('g').selectAll('line').data(y.ticks(4)).join('line')
+      .attr('x1', ml).attr('x2', w - 8).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+    styleAxis(svg.append('g').attr('transform', `translate(0,${h - 28})`).call(d3.axisBottom(x).ticks(5).tickFormat((v) => v + '%').tickSizeOuter(0)));
+    styleAxis(svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(int))).select('.domain').remove();
+    const tp = tipper(el);
+    svg.append('g').selectAll('rect').data(bins).join('rect')
+      .attr('x', (b) => x(b.lo) + 2).attr('width', (b) => Math.max(1, x(b.hi) - x(b.lo) - 4))
+      .attr('y', (b) => y(b.n)).attr('height', (b) => y(0) - y(b.n)).attr('rx', 4)
+      .attr('fill', (b) => (b.hi <= LSL ? 'var(--cds-chart-status-critical)' : dash.colors[0]))
+      .on('mousemove', (ev, b) => {
+        const [mx, my] = d3.pointer(ev, el);
+        tp.show(`${b.lo}–${b.hi}%`, [{ text: `${int(b.n)} audits · ${share(b.n / sc.length)}` }], mx, my);
+      })
+      .on('mouseleave', () => tp.hide());
+    const m = d3.mean(sc);
+    for (const [v, lab, dashArr] of [[LSL, 'Pass 70%', '4 4'], [m, `Mean ${pct1(m)}`, null]]) {
+      svg.append('line').attr('x1', x(v)).attr('x2', x(v)).attr('y1', 10).attr('y2', h - 28)
+        .attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', dashArr);
+    }
+    const lx = x(LSL), mxp = x(m);
+    const apart = Math.abs(lx - mxp) > 70;
+    svg.append('text').attr('x', lx - 4).attr('y', 10).attr('text-anchor', 'end').text('Pass 70%');
+    svg.append('text').attr('x', mxp + 4).attr('y', apart ? 10 : 24).text(`Mean ${pct1(m)}`);
+  };
+
+  const drawHBar = (el, items, fmtV, label) => {
+    clear(el);
+    if (!items.length) return empty(el, 'Nothing to show in this period.');
+    const rowH = 26;
+    const { svg, w } = svgFor(el, items.length * rowH + 8);
+    const lw = Math.min(w * 0.45, measure(svg, items.map((d) => d.label)) + 8);
+    const vw = measure(svg, items.map((d) => fmtV(d))) + 8;
+    const x = d3.scaleLinear([0, d3.max(items, (d) => d.value) || 1], [lw, w - vw]);
+    const tp = tipper(el);
+    const g = svg.selectAll('g.r').data(items).join('g').attr('transform', (_, i) => `translate(0,${i * rowH + 4})`);
+    g.append('text').attr('x', lw - 8).attr('y', rowH / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
+      .text((d) => (d.label.length > 34 ? d.label.slice(0, 33) + '…' : d.label));
+    g.append('rect').attr('x', lw).attr('y', 4).attr('height', rowH - 10).attr('rx', 4)
+      .attr('width', (d) => Math.max(2, x(d.value) - lw)).attr('fill', (d, i) => (i === 0 ? dash.colors[0] : 'var(--cds-chart-muted)'));
+    g.append('text').attr('x', (d) => x(d.value) + 6).attr('y', rowH / 2).attr('dy', '0.35em').style('fill', 'var(--color-fg)').text((d) => fmtV(d));
+    g.append('rect').attr('x', 0).attr('width', w).attr('height', rowH).attr('fill', 'transparent')
+      .on('mousemove', (ev, d) => { const [mx, my] = d3.pointer(ev, el); tp.show(d.label, d.tip || [{ text: `${fmtV(d)} ${label}` }], mx, my); })
+      .on('mouseleave', () => tp.hide());
+  };
+
+  const drawPareto = (el, ps) => {
+    clear(el);
+    const items = ps.filter((p) => p.n).sort((a, b) => b.miss - a.miss);
+    const total = d3.sum(items, (p) => p.miss);
+    if (!total) return empty(el, 'No parameter misses in this period.');
+    let cum = 0;
+    items.forEach((p) => { cum += p.miss; p.cum = cum / total; });
+    const { svg, w, h } = svgFor(el, 320);
+    const y = d3.scaleLinear([0, d3.max(items, (p) => p.miss)], [h - 70, 14]).nice();
+    const yR = d3.scaleLinear([0, 1], [h - 70, 14]);
+    const ml = measure(svg, y.ticks(4).map(int)) + 10, mr = measure(svg, ['100%']) + 10;
+    const x = d3.scaleBand(items.map((p) => p.id), [ml, w - mr]).padding(0.25);
+    svg.append('g').selectAll('line').data(yR.ticks(4)).join('line')
+      .attr('x1', ml).attr('x2', w - mr).attr('y1', yR).attr('y2', yR).attr('stroke', 'var(--cds-chart-grid)');
+    const short = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
+    const ax = styleAxis(svg.append('g').attr('transform', `translate(0,${h - 70})`).call(d3.axisBottom(x).tickFormat((id) => short[id]).tickSizeOuter(0)));
+    ax.selectAll('text').attr('transform', 'rotate(-35)').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.6em');
+    styleAxis(svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(int))).select('.domain').remove();
+    styleAxis(svg.append('g').attr('transform', `translate(${w - mr},0)`).call(d3.axisRight(yR).ticks(4).tickFormat(d3.format('.0%')))).select('.domain').remove();
+    svg.append('line').attr('x1', ml).attr('x2', w - mr).attr('y1', yR(0.8)).attr('y2', yR(0.8)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4');
+    const bw = Math.min(32, x.bandwidth());
+    const vital = new Set();
+    let reached = false;
+    for (const p of items) { if (!reached) vital.add(p.id); if (p.cum >= 0.8) reached = true; }
+    svg.append('g').selectAll('rect').data(items).join('rect')
+      .attr('x', (p) => x(p.id) + (x.bandwidth() - bw) / 2).attr('width', bw).attr('y', (p) => y(p.miss)).attr('height', (p) => y(0) - y(p.miss)).attr('rx', 4)
+      .attr('fill', (p) => (vital.has(p.id) ? dash.colors[0] : 'var(--cds-chart-muted)'));
+    svg.append('path').datum(items).attr('d', d3.line().x((p) => x(p.id) + x.bandwidth() / 2).y((p) => yR(p.cum)))
+      .attr('fill', 'none').attr('stroke', dash.colors[1]).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
+    svg.append('g').selectAll('circle').data(items).join('circle').attr('cx', (p) => x(p.id) + x.bandwidth() / 2).attr('cy', (p) => yR(p.cum)).attr('r', 3).attr('fill', dash.colors[1]);
+    const tp = tipper(el);
+    svg.append('g').selectAll('rect').data(items).join('rect')
+      .attr('x', (p) => x(p.id) - (x.step() - x.bandwidth()) / 2).attr('width', x.step()).attr('y', 0).attr('height', h - 70).attr('fill', 'transparent')
+      .on('mousemove', (ev, p) => {
+        const [mx, my] = d3.pointer(ev, el);
+        tp.show(p.name, [{ color: dash.colors[0], text: `${int(p.miss)} misses · ${share(p.missRate)} of audits` }, { color: dash.colors[1], text: `Running share ${share(p.cum)}` }], mx, my);
+      })
+      .on('mouseleave', () => tp.hide());
+    legend(el, [{ color: dash.colors[0], label: 'Vital few (to 80%)' }, { color: 'var(--cds-chart-muted)', label: 'Useful many' }, { color: dash.colors[1], label: 'Cumulative share', line: true }]);
+  };
+
+  const drawControl = (el, rows) => {
+    clear(el);
+    const scored = rows.filter((r) => r.score != null);
+    if (scored.length < 3) return empty(el, 'Too few scored audits for a control chart.');
+    const all = scored.map((r) => r.score);
+    const cl = d3.mean(all), sd = d3.deviation(all);
+    const data = d3.groups(scored, (r) => r.date).sort((a, b) => d3.ascending(a[0], b[0])).map(([d, rs]) => {
+      const n = rs.length, m = d3.mean(rs, (r) => r.score), lim = (3 * sd) / Math.sqrt(n);
+      return { d, n, m, ucl: Math.min(100, cl + lim), lcl: Math.max(0, cl - lim) };
+    });
+    data.forEach((p) => { p.out = p.m > p.ucl || p.m < p.lcl; });
+    let run = [];
+    const flag = () => { if (run.length >= 7) run.forEach((p) => { p.run = true; }); };
+    for (const p of data) {
+      const side = p.m >= cl ? 1 : -1;
+      if (run.length && (run[0].m >= cl ? 1 : -1) !== side) { flag(); run = []; }
+      run.push(p);
+    }
+    flag();
+    const { svg, w, h } = svgFor(el, 320);
+    const lo = Math.max(0, Math.min(d3.min(data, (p) => p.lcl), d3.min(data, (p) => p.m)) - 5);
+    const hi = Math.min(100, Math.max(d3.max(data, (p) => p.ucl), d3.max(data, (p) => p.m)) + 5);
+    const y = d3.scaleLinear([lo, hi], [h - 28, 14]).nice();
+    const ml = measure(svg, y.ticks(5).map((v) => v + '%')) + 10;
+    const mr = measure(svg, ['UCL', 'LCL', 'Mean']) + 12;
+    const x = d3.scalePoint(data.map((p) => p.d), [ml + 8, w - mr - 8]);
+    svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', ml).attr('x2', w - mr).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
+    const every = Math.max(1, Math.ceil(data.length / Math.max(2, Math.floor((w - ml - mr) / 56))));
+    styleAxis(svg.append('g').attr('transform', `translate(0,${h - 28})`).call(d3.axisBottom(x).tickValues(data.map((p) => p.d).filter((_, i) => i % every === 0)).tickFormat((d) => dayFmt(pDate(d))).tickSizeOuter(0)));
+    styleAxis(svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(5).tickFormat((v) => v + '%'))).select('.domain').remove();
+    const step = (key) => d3.line().curve(d3.curveStep).x((p) => x(p.d)).y((p) => y(p[key]));
+    for (const key of ['ucl', 'lcl']) svg.append('path').datum(data).attr('d', step(key)).attr('fill', 'none').attr('stroke', 'var(--cds-chart-status-critical)').attr('stroke-dasharray', '4 4').attr('opacity', 0.7);
+    svg.append('line').attr('x1', ml).attr('x2', w - mr).attr('y1', y(cl)).attr('y2', y(cl)).attr('stroke', 'var(--cds-chart-reference)');
+    if (LSL >= y.domain()[0] && LSL <= y.domain()[1]) {
+      svg.append('line').attr('x1', ml).attr('x2', w - mr).attr('y1', y(LSL)).attr('y2', y(LSL)).attr('stroke', 'var(--cds-chart-axis)').attr('stroke-dasharray', '1 3');
+      svg.append('text').attr('x', ml + 4).attr('y', y(LSL) - 4).text('LSL 70%');
+    }
+    const last = data[data.length - 1];
+    const ends = [['UCL', y(last.ucl)], ['Mean', y(cl)], ['LCL', y(last.lcl)]];
+    for (let i = 1; i < ends.length; i++) if (ends[i][1] - ends[i - 1][1] < 12) ends[i][1] = ends[i - 1][1] + 12;
+    for (const [t, yy] of ends) svg.append('text').attr('x', w - mr + 6).attr('y', yy).attr('dy', '0.35em').text(t);
+    svg.append('path').datum(data).attr('d', d3.line().x((p) => x(p.d)).y((p) => y(p.m))).attr('fill', 'none').attr('stroke', dash.colors[0]).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
+    svg.append('g').selectAll('circle.ring').data(data.filter((p) => p.run)).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.m)).attr('r', 7).attr('fill', 'none').attr('stroke', 'var(--color-warn)').attr('stroke-width', 1.5);
+    svg.append('g').selectAll('circle.pt').data(data).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.m)).attr('r', (p) => (p.out ? 5 : 3.5))
+      .attr('fill', (p) => (p.out ? 'var(--cds-chart-status-critical)' : dash.colors[0]));
+    const tp = tipper(el);
+    const vor = d3.Delaunay.from(data, (p) => x(p.d), (p) => y(p.m));
+    svg.append('rect').attr('x', ml).attr('y', 0).attr('width', w - ml - mr).attr('height', h - 28).attr('fill', 'transparent')
+      .on('mousemove', (ev) => {
+        const [px, py] = d3.pointer(ev, svg.node());
+        const p = data[vor.find(px, py)];
+        const [mx, my] = d3.pointer(ev, el);
+        tp.show(d3.utcFormat('%a, %b %-d')(pDate(p.d)), [
+          { color: dash.colors[0], text: `Avg ${pct1(p.m)} from ${int(p.n)} audits` },
+          { text: `Limits ${pct1(p.lcl)} – ${pct1(p.ucl)}` },
+          ...(p.out ? [{ color: 'var(--cds-chart-status-critical)', text: 'Outside control limits' }] : []),
+          ...(p.run ? [{ color: 'var(--color-warn)', text: 'Part of a 7+ day run on one side' }] : []),
+        ], mx, my);
+      })
+      .on('mouseleave', () => tp.hide());
+  };
+
+  // ---------- tables ----------
+  const tState = {};
+  const table = (id, cols, rows, opt = {}) => {
+    const host = document.getElementById(id);
+    const st = (tState[id] ??= { sort: opt.sort, dir: opt.dir || 'desc' });
+    const q = opt.search ? opt.search.value.trim().toLowerCase() : '';
+    let data = q ? rows.filter((r) => (opt.text ? opt.text(r) : '').toLowerCase().includes(q)) : rows.slice();
+    const col = cols.find((c) => c.key === st.sort);
+    if (col) {
+      const v = col.sortVal || ((r) => r[col.key]);
+      data.sort((a, b) => {
+        const x = v(a), y = v(b);
+        if (x == null && y == null) return 0;
+        if (x == null) return 1;
+        if (y == null) return -1;
+        return st.dir === 'asc' ? d3.ascending(x, y) : d3.descending(x, y);
+      });
+    }
+    const t = document.createElement('table');
+    t.className = 'qa-table' + (opt.cls ? ' ' + opt.cls : '');
+    const hr = t.createTHead().insertRow();
+    for (const c of cols) {
+      const th = document.createElement('th');
+      if (c.num) th.className = 'num';
+      if (c.key === st.sort) th.setAttribute('aria-sort', st.dir === 'asc' ? 'ascending' : 'descending');
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = c.label + (c.key === st.sort ? (st.dir === 'asc' ? ' ▲' : ' ▼') : '');
+      b.addEventListener('click', () => {
+        if (st.sort === c.key) st.dir = st.dir === 'asc' ? 'desc' : 'asc';
+        else { st.sort = c.key; st.dir = c.num ? 'desc' : 'asc'; }
+        table(id, cols, rows, opt);
+      });
+      th.append(b);
+      hr.append(th);
+    }
+    const tb = t.createTBody();
+    for (const r of data) {
+      const tr = tb.insertRow();
+      for (const c of cols) {
+        const td = tr.insertCell();
+        if (c.num) td.className = 'num';
+        if (c.cls) { const k = c.cls(r); if (k) td.classList.add(...k.split(' ')); }
+        if (c.render) c.render(td, r);
+        else td.textContent = c.fmt ? c.fmt(r[c.key], r) : r[c.key] ?? '—';
+      }
+    }
+    if (!data.length) {
+      const td = tb.insertRow().insertCell();
+      td.colSpan = cols.length;
+      td.textContent = q ? 'No rows match the search.' : 'No audits in this period.';
+      td.style.color = 'var(--color-fg-muted)';
+    }
+    host.replaceChildren(t);
+  };
+  const chip = (td, b) => { if (!b) { td.textContent = '—'; return; } const s = document.createElement('span'); s.className = 'chip ' + b; s.textContent = b; td.append(s); };
+  const two = (td, a, b) => { td.append(document.createTextNode(a)); const s = document.createElement('span'); s.className = 'qa-sub'; s.textContent = b; td.append(s); };
+  const scoreCls = (v) => (v == null ? '' : v >= TOP ? 'good' : v < LSL ? 'bad' : '');
+  const person = (key) => (td, r) => { const a = r[key]; if (!a) { td.textContent = '—'; return; } two(td, a.name, pct1(a.avg) + ` · ${int(a.scored)} audits`); };
+  const mixCell = (td, r) => {
+    const w = document.createElement('span'); w.className = 'mix';
+    for (const b of ['Top', 'Middle', 'Bottom']) { const s = document.createElement('span'); s.className = 'chip ' + b; s.textContent = r.mix[b]; s.title = b; w.append(s); }
+    td.append(w);
+  };
+  const levelCols = (label, labelRender) => [
+    { key: 'label', label, render: labelRender, sortVal: (r) => r.label.toLowerCase() },
+    { key: 'n', label: 'Audits', num: true, fmt: int },
+    { key: 'agents', label: 'Counsellors', num: true, fmt: int },
+    { key: 'avg', label: 'Avg QA score', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
+    { key: 'pass', label: 'Pass rate', num: true, fmt: share },
+    { key: 'fatal', label: 'Fatal', num: true, fmt: int, cls: (r) => (r.fatal ? 'bad' : '') },
+    { key: 'top', label: 'Top scorer', render: person('top'), sortVal: (r) => r.top?.avg },
+    { key: 'bottom', label: 'Bottom performer', render: person('bottom'), sortVal: (r) => r.bottom?.avg },
+    { key: 'mix', label: 'Band mix T·M·B', render: mixCell, sortVal: (r) => r.mix.Top - r.mix.Bottom },
+  ];
+
+  // ---------- tabs ----------
+  const tabs = [...document.querySelectorAll('.qa-tab')];
+  let current = 'overview';
+  const show = (id, link) => {
+    current = id;
+    tabs.forEach((t) => t.setAttribute('aria-selected', String(t.dataset.tab === id)));
+    document.querySelectorAll('.qa-page').forEach((p) => { p.hidden = p.id !== id; });
+    if (link) dash.setLink(id);
+    draw();
+  };
+  tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.tab, true)));
+  $('#s-agents').addEventListener('input', () => draw());
+  $('#s-heat').addEventListener('input', () => draw());
+
+  // ---------- main draw ----------
+  const setText = (id, v, cls) => { const el = document.getElementById(id); el.textContent = v; el.classList.remove('dash-skeleton', 'good', 'bad', 'warn'); if (cls) el.classList.add(cls); };
+  const delta = (id, cur, prev, unit, goodUp, label) => {
+    const el = document.getElementById(id);
+    el.classList.remove('good', 'bad');
+    if (cur == null || prev == null) { el.textContent = label ? `no data ${label}` : ''; return; }
+    const d = cur - prev;
+    const s = unit === 'pp' ? `${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(1)} pts` : unit === 'share' ? `${d >= 0 ? '+' : '−'}${Math.abs(d * 100).toFixed(1)} pts` : `${d >= 0 ? '+' : '−'}${int(Math.abs(d))}`;
+    el.textContent = `${s} ${label}`;
+    if (d !== 0) el.classList.add((d > 0) === goodUp ? 'good' : 'bad');
+  };
+
+  function draw() {
+    const res = dash.data('audits');
+    const charts = ['c-daily', 'c-bands', 'c-hist', 'c-src', 'c-pareto', 'c-train', 'c-control'].map((id) => document.getElementById(id));
+    if (res.status !== 'ok') {
+      const failed = res.status === 'error' || res.status === 'missing';
+      charts.forEach((el) => {
+        clear(el);
+        el.classList.toggle('dash-skeleton', !failed);
+        if (failed) { const f = document.createElement('div'); f.className = 'qa-fail'; f.textContent = 'Failed to load'; el.append(f); }
+      });
+      $('#takeaway').textContent = '—';
+      return;
+    }
+    charts.forEach((el) => el.classList.remove('dash-skeleton'));
+    const all = res.data;
+    nameOf = new Map();
+    all.slice().sort((a, b) => d3.ascending(a.ts, b.ts)).forEach((r) => { if (r.agent_name) nameOf.set(r.agent, r.agent_name); });
+    const p = P();
+
+    // filter controls
+    const months = [...new Set([curMonth, ...all.map((r) => r.date.slice(0, 7))])].sort().reverse();
+    fMonth.replaceChildren(new Option('All months', 'all'), ...months.map((m) => new Option(monthLabel(m), m)));
+    fMonth.value = p.month;
+    const weekPool = all.filter((r) => p.month === 'all' || r.date.slice(0, 7) === p.month);
+    const weeks = [...new Set(weekPool.map((r) => isoWeek(r.date)))];
+    if (p.week !== 'all' && !weeks.includes(p.week)) weeks.push(p.week);
+    weeks.sort().reverse();
+    fWeek.replaceChildren(new Option('All weeks', 'all'), ...weeks.map((k) => new Option(weekLabel(k), k)));
+    fWeek.value = p.week;
+    const cats = [...new Set(all.map((r) => r.category).filter(Boolean))].sort();
+    fCat.replaceChildren(new Option('All categories', 'all'), ...cats.map((c) => new Option(c, c)));
+    fCat.value = p.category;
+    if (fFrom !== document.activeElement) fFrom.value = p.from ?? '';
+    if (fTo !== document.activeElement) fTo.value = p.to ?? '';
+
+    const win = windowOf(p, all);
+    const rows = all.filter((r) => inCat(r, p) && (p.month === 'all' || r.date.slice(0, 7) === p.month) && (p.week === 'all' || isoWeek(r.date) === p.week) && (!p.from || r.date >= p.from) && (!p.to || r.date <= p.to));
+    let prev = null, prevLabel = '';
+    if (win) {
+      const len = d3.utcDay.count(pDate(win[0]), pDate(win[1])) + 1;
+      const pe = iso(d3.utcDay.offset(pDate(win[0]), -1)), ps = iso(d3.utcDay.offset(pDate(win[0]), -len));
+      prev = all.filter((r) => inCat(r, p) && r.date >= ps && r.date <= pe);
+      prevLabel = `vs prior ${len} day${len > 1 ? 's' : ''}`;
+    }
+    const winText = win ? `${d3.utcFormat('%b %-d, %Y')(pDate(win[0]))} – ${d3.utcFormat('%b %-d, %Y')(pDate(win[1]))}` : 'All dates';
+    const unscored = rows.filter((r) => r.score == null).length;
+    $('#window').textContent = `Showing ${winText}${p.category !== 'all' ? ' · ' + p.category : ''} · ${int(rows.length)} audits${unscored ? ` (${int(unscored)} not yet scored in the sheet)` : ''}.`;
+
+    // headline
+    const s = summarize(rows), ps = prev ? summarize(prev) : null;
+    const sig = sigmaStats(rows);
+    const pstats = paramStats(rows.filter((r) => r.score != null));
+    const worst = pstats.filter((x) => x.n).sort((a, b) => b.missRate - a.missRate)[0];
+    $('#takeaway').textContent = s.n
+      ? `${int(s.n)} audits across ${int(s.agents)} counsellors: average QA score ${pct1(s.avg)} with ${share(s.pass)} at or above the 70% pass mark` +
+        (ps && ps.avg != null && s.avg != null ? ` (${s.avg >= ps.avg ? 'up' : 'down'} ${Math.abs(s.avg - ps.avg).toFixed(1)} pts on the prior period)` : '') +
+        (worst ? `. Biggest gap: ${worst.name.toLowerCase()}, missed on ${share(worst.missRate)} of audits.` : '.')
+      : 'No audits in this period. Widen the filters to see data.';
+
+    setText('k-audits', int(s.n));
+    delta('k-audits-d', s.n, ps?.n, 'n', true, prevLabel);
+    setText('k-score', pct1(s.avg), s.avg == null ? '' : s.avg >= TOP ? 'good' : s.avg < LSL ? 'bad' : '');
+    delta('k-score-d', s.avg, ps?.avg, 'pp', true, prevLabel);
+    setText('k-pass', share(s.pass));
+    delta('k-pass-d', s.pass, ps?.pass, 'share', true, prevLabel);
+    setText('k-fatal', int(s.fatal), s.fatal ? 'bad' : '');
+    delta('k-fatal-d', s.fatal, ps?.fatal, 'n', false, prevLabel);
+    setText('k-agents', int(s.agents));
+    document.getElementById('k-agents-d').textContent = s.agents ? `${(s.n / s.agents).toFixed(1)} audits per counsellor` : '';
+    setText('k-sigma', sig.sigma == null ? '—' : sig.sigma.toFixed(2) + 'σ');
+    document.getElementById('k-sigma-d').textContent = sig.dpmo == null ? '' : `${int(Math.round(sig.dpmo))} defects per million opportunities`;
+
+    const agents = byAgent(rows);
+
+    if (current === 'overview') {
+      drawDaily(document.getElementById('c-daily'), rows, win);
+      drawBands(document.getElementById('c-bands'), agents);
+      drawHist(document.getElementById('c-hist'), rows);
+      const ranked = agents.filter((a) => a.scored >= 2).sort((a, b) => b.avg - a.avg);
+      const tb = [...ranked.slice(0, 5).map((a, i) => ({ ...a, rank: `#${i + 1}` })), ...ranked.slice(5).slice(-5).map((a, i, arr) => ({ ...a, rank: `#${ranked.length - arr.length + i + 1}` }))];
+      tState['t-topbottom'] = { sort: null };
+      table('t-topbottom', [
+        { key: 'rank', label: 'Rank' },
+        { key: 'name', label: 'Counsellor', render: (td, r) => two(td, r.name, r.category || '—') },
+        { key: 'scored', label: 'Audits', num: true, fmt: int },
+        { key: 'avg', label: 'Avg', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
+        { key: 'band', label: 'Band', render: (td, r) => chip(td, r.band) },
+      ], tb);
+    }
+
+    if (current === 'teams') {
+      table('t-cat', levelCols('Category', (td, r) => { td.textContent = r.label; }), levelRows(rows, (r) => r.category || '', (k) => k || 'Not tagged'), { sort: 'n' });
+      table('t-am', levelCols('Category AM', (td, r) => two(td, r.label, r.key || '—')), levelRows(rows, (r) => r.am || '', (k) => prettyEmail(k)), { sort: 'n' });
+      const team = s.avg;
+      const qaRows = levelRows(rows, (r) => r.qa || '', (k) => prettyEmail(k)).map((r) => ({ ...r, gap: r.avg == null || team == null ? null : r.avg - team }));
+      const qaCols = levelCols('QA', (td, r) => two(td, r.label, r.key || '—'));
+      qaCols.splice(6, 0, { key: 'sd', label: 'Score σ', num: true, fmt: (v) => (v == null ? '—' : v.toFixed(1)) },
+        { key: 'gap', label: 'Calibration gap', num: true, fmt: (v) => (v == null ? '—' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)} pts`), cls: (r) => (r.gap != null && Math.abs(r.gap) > 5 ? 'warn' : '') });
+      table('t-qa', qaCols, qaRows, { sort: 'n' });
+      const srcMap = new Map();
+      for (const r of rows) { const l = srcLabel(r.source); const k = l.toLowerCase(); if (!srcMap.has(k)) srcMap.set(k, { label: l, rows: [] }); srcMap.get(k).rows.push(r); }
+      const src = [...srcMap.values()].map((x) => ({ key: x.label, label: x.label, ...summarize(x.rows), shareOf: x.rows.length / rows.length }));
+      table('t-src', [
+        { key: 'label', label: 'Lead source', sortVal: (r) => r.label.toLowerCase() },
+        { key: 'n', label: 'Audits', num: true, fmt: int },
+        { key: 'shareOf', label: 'Coverage', num: true, fmt: share },
+        { key: 'agents', label: 'Counsellors', num: true, fmt: int },
+        { key: 'avg', label: 'Avg QA score', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
+        { key: 'pass', label: 'Pass rate', num: true, fmt: share },
+      ], src, { sort: 'n' });
+      drawHBar(document.getElementById('c-src'), src.sort((a, b) => b.n - a.n).map((x) => ({ label: x.label, value: x.n, pct: x.shareOf, tip: [{ text: `${int(x.n)} audits · ${share(x.shareOf)} coverage` }, { text: `Avg score ${pct1(x.avg)}` }] })), (d) => `${int(d.value)} · ${share(d.pct)}`, 'audits');
+    }
+
+    if (current === 'counsellors') {
+      table('t-agents', [
+        { key: 'name', label: 'Counsellor', render: (td, r) => two(td, r.name, r.agent), sortVal: (r) => r.name.toLowerCase() },
+        { key: 'category', label: 'Category', fmt: (v) => v || '—' },
+        { key: 'am', label: 'Category AM', fmt: (v) => (v ? prettyEmail(v) : '—') },
+        { key: 'n', label: 'Audits', num: true, fmt: int },
+        { key: 'avg', label: 'Avg QA score', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
+        { key: 'min', label: 'Lowest', num: true, fmt: pct1 },
+        { key: 'max', label: 'Highest', num: true, fmt: pct1 },
+        { key: 'pass', label: 'Pass rate', num: true, fmt: share },
+        { key: 'fatal', label: 'Fatal', num: true, fmt: int, cls: (r) => (r.fatal ? 'bad' : '') },
+        { key: 'band', label: 'Band', render: (td, r) => chip(td, r.band), sortVal: (r) => r.avg },
+      ], agents, { sort: 'avg', search: $('#s-agents'), text: (r) => [r.name, r.agent, r.category, r.am].join(' ') });
+    }
+
+    if (current === 'parameters') {
+      table('t-params', [
+        { key: 'name', label: 'Parameter' },
+        { key: 'max', label: 'Weight', num: true, fmt: (v) => String(v) },
+        { key: 'n', label: 'Audits scored', num: true, fmt: int },
+        { key: 'avg', label: 'Avg score', num: true, fmt: (v) => (v == null ? '—' : v.toFixed(2)) },
+        { key: 'ach', label: 'Achievement', num: true, render: (td, r) => {
+          td.textContent = share(r.ach);
+          const b = document.createElement('span'); b.className = 'cbar'; b.style.width = Math.max(0, Math.min(1, r.ach || 0)) * 60 + 'px'; td.append(b);
+        }, cls: (r) => (r.ach == null ? '' : r.ach >= 0.8 ? 'good' : r.ach < 0.6 ? 'bad' : '') },
+        { key: 'missRate', label: 'Miss rate', num: true, fmt: share, cls: (r) => (r.missRate > 0.25 ? 'bad' : '') },
+        { key: 'stopRate', label: 'Stop-doing flagged', num: true, fmt: (v) => (v == null ? 'n/a' : share(v)) },
+      ], pstats, { sort: 'missRate' });
+      drawPareto(document.getElementById('c-pareto'), pstats.map((x) => ({ ...x })));
+      const tc = new Map();
+      for (const r of rows) for (const t of (r.training || '').split(',').map((x) => x.trim()).filter((x) => x && !/^(na|n\/a|none)$/i.test(x))) tc.set(t, (tc.get(t) || 0) + 1);
+      drawHBar(document.getElementById('c-train'), [...tc].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([label, value]) => ({ label, value })), (d) => int(d.value), 'audits');
+      const heat = agents.filter((a) => a.scored).map((a) => {
+        const rs = rows.filter((r) => r.agent === a.agent && r.score != null);
+        const o = { ...a };
+        for (const pp of PARAMS) { const v = rs.map((r) => paramScore(r, pp)).filter((x) => x != null); o[pp.id] = v.length ? d3.mean(v) / pp.max : null; }
+        return o;
+      });
+      const hc = (v) => (v == null ? '' : v >= 0.8 ? 'c g' : v >= 0.6 ? 'c w' : 'c b');
+      const short = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
+      table('t-heat', [
+        { key: 'name', label: 'Counsellor', render: (td, r) => two(td, r.name, `${r.category || '—'} · ${int(r.scored)} audits`), sortVal: (r) => r.name.toLowerCase() },
+        { key: 'avg', label: 'Overall', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
+        ...PARAMS.map((pp) => ({ key: pp.id, label: `${short[pp.id]} /${pp.max}`, num: true, fmt: (v) => (v == null ? '—' : d3.format('.0%')(v)), cls: (r) => hc(r[pp.id]) })),
+      ], heat, { sort: 'avg', cls: 'hm', search: $('#s-heat'), text: (r) => [r.name, r.agent, r.category].join(' ') });
+    }
+
+    if (current === 'sigma') {
+      setText('z-mean', pct1(sig.mean));
+      document.getElementById('z-mean-d').textContent = `${int(sig.n)} scored audits`;
+      setText('z-sd', sig.sd == null ? '—' : sig.sd.toFixed(1) + ' pts');
+      document.getElementById('z-sd-d').textContent = sig.sd == null ? '' : `68% of calls between ${pct1(Math.max(0, sig.mean - sig.sd))} and ${pct1(Math.min(100, sig.mean + sig.sd))}`;
+      setText('z-ppk', sig.ppk == null ? '—' : sig.ppk.toFixed(2), sig.ppk == null ? '' : sig.ppk >= 1.33 ? 'good' : sig.ppk < 1 ? 'bad' : 'warn');
+      document.getElementById('z-ppk-d').textContent = sig.ppk == null ? '' : sig.ppk >= 1.33 ? 'Capable vs 70% pass mark' : sig.ppk >= 1 ? 'Marginal: tighten the spread' : sig.ppk < 0 ? 'Average is under the pass mark' : 'Not capable: too many calls fall under 70%';
+      setText('z-dpmo', sig.dpmo == null ? '—' : d3.format(',.0f')(sig.dpmo));
+      document.getElementById('z-dpmo-d').textContent = sig.opps ? `${int(sig.defects)} defects in ${int(sig.opps)} opportunities` : '';
+      setText('z-sigma', sig.sigma == null ? '—' : sig.sigma.toFixed(2) + 'σ');
+      document.getElementById('z-sigma-d').textContent = sig.sigma == null ? '' : `Yield ${share(1 - sig.dpmo / 1e6)} per opportunity`;
+      setText('z-rty', share(sig.rty));
+      document.getElementById('z-rty-d').textContent = sig.ftr == null ? '' : `${share(sig.ftr)} of calls actually cleared every parameter`;
+      drawControl(document.getElementById('c-control'), rows);
+      const capRows = d3.groups(rows, (r) => r.category || 'Not tagged').map(([key, rs]) => {
+        const z = sigmaStats(rs);
+        return { key, label: key, n: z.n, mean: z.mean, sd: z.sd, ppk: z.ppk, dpmo: z.dpmo, sigma: z.sigma, rty: z.rty,
+          verdict: z.ppk == null ? '—' : z.ppk >= 1.33 ? 'Capable' : z.ppk >= 1 ? 'Marginal' : 'Not capable' };
+      });
+      table('t-capcat', [
+        { key: 'label', label: 'Category' },
+        { key: 'n', label: 'Scored audits', num: true, fmt: int },
+        { key: 'mean', label: 'Mean', num: true, fmt: pct1, cls: (r) => scoreCls(r.mean) },
+        { key: 'sd', label: 'σ', num: true, fmt: (v) => (v == null ? '—' : v.toFixed(1)) },
+        { key: 'ppk', label: 'Ppk', num: true, fmt: (v) => (v == null ? '—' : v.toFixed(2)), cls: (r) => (r.ppk == null ? '' : r.ppk >= 1.33 ? 'good' : r.ppk < 1 ? 'bad' : 'warn') },
+        { key: 'dpmo', label: 'DPMO', num: true, fmt: (v) => (v == null ? '—' : d3.format(',.0f')(v)) },
+        { key: 'sigma', label: 'Sigma level', num: true, fmt: (v) => (v == null ? '—' : v.toFixed(2) + 'σ') },
+        { key: 'rty', label: 'RTY', num: true, fmt: share },
+        { key: 'verdict', label: 'Verdict', cls: (r) => (r.verdict === 'Capable' ? 'good' : r.verdict === 'Not capable' ? 'bad' : r.verdict === 'Marginal' ? 'warn' : '') },
+      ], capRows, { sort: 'n' });
+    }
+  }
+
+  dash.onData(draw);
+  const named = location.hash.slice(1);
+  if (tabs.some((t) => t.dataset.tab === named)) show(named, false);
+})();
+</script>

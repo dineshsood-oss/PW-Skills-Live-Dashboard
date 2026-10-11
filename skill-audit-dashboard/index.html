@@ -45,9 +45,11 @@
 .qa-tablewrap { max-width: 100%; }
 .qa-sub { display: block; color: var(--color-fg-muted); }
 .chip { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: var(--cds-font-size-caption); line-height: 1.6; }
-.chip.Top { background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); }
-.chip.Middle { background: color-mix(in srgb, var(--color-warn) 18%, transparent); color: var(--color-warn); }
-.chip.Bottom { background: color-mix(in srgb, var(--color-bad) 18%, transparent); color: var(--color-bad); }
+.chip.Rockers { background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); }
+.chip.Movers { background: color-mix(in srgb, var(--cat-movers) 18%, transparent); color: var(--cat-movers); }
+.chip.Levellers { background: color-mix(in srgb, var(--color-warn) 18%, transparent); color: var(--color-warn); }
+.chip.Strugglers { background: color-mix(in srgb, var(--color-bad) 18%, transparent); color: var(--color-bad); }
+.qa { --cat-movers: var(--color-fg-muted); }
 .mix { display: inline-flex; gap: 4px; }
 .cbar { display: inline-block; height: 6px; border-radius: 3px; background: var(--color-fg-muted); opacity: .45; vertical-align: middle; margin-left: 6px; }
 .hm td.c { text-align: center; min-width: 3.4rem; }
@@ -94,6 +96,7 @@
       <div class="qa-card" id="kpi-score"><div class="kpi-l">Average QA score</div><div class="kpi-v dash-skeleton" id="k-score">—</div><div class="kpi-d" id="k-score-d"></div></div>
       <div class="qa-card" id="kpi-pass"><div class="kpi-l">At or above 70% pass mark</div><div class="kpi-v dash-skeleton" id="k-pass">—</div><div class="kpi-d" id="k-pass-d"></div></div>
       <div class="qa-card" id="kpi-fatal"><div class="kpi-l">Fatal errors</div><div class="kpi-v dash-skeleton" id="k-fatal">—</div><div class="kpi-d" id="k-fatal-d"></div></div>
+      <div class="qa-card" id="kpi-concern"><div class="kpi-l">Concerning calls</div><div class="kpi-v dash-skeleton" id="k-concern">—</div><div class="kpi-d" id="k-concern-d"></div></div>
       <div class="qa-card" id="kpi-agents"><div class="kpi-l">Counsellors audited</div><div class="kpi-v dash-skeleton" id="k-agents">—</div><div class="kpi-d" id="k-agents-d"></div></div>
       <div class="qa-card" id="kpi-sigma"><div class="kpi-l">Process sigma level</div><div class="kpi-v dash-skeleton" id="k-sigma">—</div><div class="kpi-d" id="k-sigma-d"></div></div>
     </div>
@@ -104,8 +107,8 @@
         <div class="qa-chart" id="c-daily"></div>
       </div>
       <div class="qa-card" id="card-bands" data-source="audits">
-        <h2>Counsellor performance bands</h2>
-        <p class="qa-note">Each counsellor's average score: Top 80%+, Middle 70–80%, Bottom under 70%.</p>
+        <h2>Counsellor performance categories</h2>
+        <p class="qa-note">By each counsellor's average score: Rockers 80%+, Movers 70–80%, Levellers 60–70%, Strugglers under 60%.</p>
         <div class="qa-chart" id="c-bands"></div>
       </div>
       <div class="qa-card" id="card-hist" data-source="audits">
@@ -125,7 +128,7 @@
     <div class="qa-grid">
       <div class="qa-card wide" id="card-cat" data-source="audits">
         <h2>Category level</h2>
-        <p class="qa-note">Band mix counts counsellors in Top · Middle · Bottom bands within each row.</p>
+        <p class="qa-note">Performance category is the row's own average score: Rockers 80%+, Movers 70–80%, Levellers 60–70%, Strugglers under 60%. Category mix counts its counsellors in each category (R · M · L · S). Concerning counts audits the QA flagged as Concerning.</p>
         <div class="qa-tablewrap" id="t-cat"></div>
       </div>
       <div class="qa-card wide" id="card-am" data-source="audits">
@@ -238,7 +241,9 @@
     { id: 'soft', name: 'Soft skills', max: 15, k: 'soft' },
     { id: 'dispo', name: 'Disposition as per NPF', max: 5, k: 'dispo' },
   ];
-  const BAND_COLOR = { Top: 'var(--color-ok)', Middle: 'var(--color-warn)', Bottom: 'var(--color-bad)' };
+  const CATS = ['Rockers', 'Movers', 'Levellers', 'Strugglers'];
+  const BAND_COLOR = { Rockers: 'var(--color-ok)', Movers: dash.colors[0], Levellers: 'var(--color-warn)', Strugglers: 'var(--color-bad)' };
+  document.querySelector('.qa').style.setProperty('--cat-movers', dash.colors[0]);
 
   const $ = (s) => document.querySelector(s);
   const int = d3.format(',');
@@ -271,7 +276,9 @@
   };
   const prettyEmail = (e) =>
     !e ? 'Not tagged' : e.split('@')[0].replace(/[0-9]+$/, '').split(/[._]/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(' ');
-  const band = (avg) => (avg == null ? null : avg >= TOP ? 'Top' : avg >= LSL ? 'Middle' : 'Bottom');
+  // Performance category: <60% Strugglers, <70% Levellers, <80% Movers, >=80% Rockers
+  const band = (avg) => (avg == null ? null : avg >= 80 ? 'Rockers' : avg >= 70 ? 'Movers' : avg >= 60 ? 'Levellers' : 'Strugglers');
+  const isConcerning = (r) => /^concerning$/i.test(r.concerning || '');
   const mean = (a) => (a.length ? d3.mean(a) : null);
   const isFatal = (r) =>
     r.fatal_flag === 'Fatal' || (!!r.fatal_error && r.fatal_error !== 'NA' && !/^No Fatal Issue Identified$/i.test(r.fatal_error));
@@ -351,6 +358,7 @@
       sd: sc.length > 1 ? d3.deviation(sc) : null,
       pass: sc.length ? sc.filter((v) => v >= LSL).length / sc.length : null,
       fatal: rows.filter(isFatal).length,
+      concerning: rows.filter(isConcerning).length,
       agents: new Set(rows.map((r) => r.agent)).size,
       min: d3.min(sc),
       max: d3.max(sc),
@@ -370,9 +378,9 @@
       const ag = byAgent(rs).filter((a) => a.avg != null);
       const top = d3.greatest(ag, (a) => a.avg + a.scored / 1e4);
       const bottom = d3.least(ag, (a) => a.avg - a.scored / 1e4);
-      const mix = { Top: 0, Middle: 0, Bottom: 0 };
+      const mix = Object.fromEntries(CATS.map((c) => [c, 0]));
       ag.forEach((a) => mix[a.band]++);
-      return { key, label: labelFn(key), ...s, top, bottom, mix };
+      return { key, label: labelFn(key), ...s, band: band(s.avg), top, bottom, mix };
     });
   const paramStats = (rows) =>
     PARAMS.map((p) => {
@@ -523,7 +531,7 @@
 
   const drawBands = (el, agents) => {
     clear(el);
-    const counts = ['Top', 'Middle', 'Bottom'].map((b) => ({ b, n: agents.filter((a) => a.band === b).length }));
+    const counts = CATS.map((b) => ({ b, n: agents.filter((a) => a.band === b).length }));
     const total = d3.sum(counts, (c) => c.n);
     if (!total) return empty(el, 'No scored audits in this period.');
     const { svg, w, h } = svgFor(el, 220);
@@ -536,7 +544,7 @@
       .attr('fill', (d) => BAND_COLOR[d.data.b])
       .on('mousemove', (ev, d) => {
         const [mx, my] = d3.pointer(ev, el);
-        tp.show(`${d.data.b} band`, [{ text: `${int(d.data.n)} counsellors · ${share(d.data.n / total)}` }], mx, my);
+        tp.show(d.data.b, [{ text: `${int(d.data.n)} counsellors · ${share(d.data.n / total)}` }], mx, my);
       })
       .on('mouseleave', () => tp.hide());
     g.append('text').attr('text-anchor', 'middle').attr('dy', '-0.1em').style('font-family', 'var(--font-anthropic-serif)')
@@ -774,7 +782,7 @@
   const person = (key) => (td, r) => { const a = r[key]; if (!a) { td.textContent = '—'; return; } two(td, a.name, pct1(a.avg) + ` · ${int(a.scored)} audits`); };
   const mixCell = (td, r) => {
     const w = document.createElement('span'); w.className = 'mix';
-    for (const b of ['Top', 'Middle', 'Bottom']) { const s = document.createElement('span'); s.className = 'chip ' + b; s.textContent = r.mix[b]; s.title = b; w.append(s); }
+    for (const b of CATS) { const s = document.createElement('span'); s.className = 'chip ' + b; s.textContent = r.mix[b]; s.title = b; w.append(s); }
     td.append(w);
   };
   const levelCols = (label, labelRender) => [
@@ -783,10 +791,12 @@
     { key: 'agents', label: 'Counsellors', num: true, fmt: int },
     { key: 'avg', label: 'Avg QA score', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
     { key: 'pass', label: 'Pass rate', num: true, fmt: share },
+    { key: 'band', label: 'Performance category', render: (td, r) => chip(td, r.band), sortVal: (r) => r.avg },
     { key: 'fatal', label: 'Fatal', num: true, fmt: int, cls: (r) => (r.fatal ? 'bad' : '') },
+    { key: 'concerning', label: 'Concerning', num: true, fmt: int, cls: (r) => (r.concerning ? 'warn' : '') },
     { key: 'top', label: 'Top scorer', render: person('top'), cls: () => 'wrap', sortVal: (r) => r.top?.avg },
     { key: 'bottom', label: 'Bottom performer', render: person('bottom'), cls: () => 'wrap', sortVal: (r) => r.bottom?.avg },
-    { key: 'mix', label: 'Band mix T·M·B', render: mixCell, sortVal: (r) => r.mix.Top - r.mix.Bottom },
+    { key: 'mix', label: 'Category mix R·M·L·S', render: mixCell, sortVal: (r) => r.mix.Rockers - r.mix.Strugglers },
   ];
 
   // ---------- tabs ----------
@@ -882,6 +892,8 @@
     delta('k-pass-d', s.pass, ps?.pass, 'share', true, prevLabel);
     setText('k-fatal', int(s.fatal), s.fatal ? 'bad' : '');
     delta('k-fatal-d', s.fatal, ps?.fatal, 'n', false, prevLabel);
+    setText('k-concern', int(s.concerning), s.concerning ? 'warn' : '');
+    delta('k-concern-d', s.concerning, ps?.concerning, 'n', false, prevLabel);
     setText('k-agents', int(s.agents));
     document.getElementById('k-agents-d').textContent = s.agents ? `${(s.n / s.agents).toFixed(1)} audits per counsellor` : '';
     setText('k-sigma', sig.sigma == null ? '—' : sig.sigma.toFixed(2) + 'σ');
@@ -901,7 +913,7 @@
         { key: 'name', label: 'Counsellor', render: (td, r) => two(td, r.name, r.category || '—') },
         { key: 'scored', label: 'Audits', num: true, fmt: int },
         { key: 'avg', label: 'Avg', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
-        { key: 'band', label: 'Band', render: (td, r) => chip(td, r.band) },
+        { key: 'band', label: 'Category', render: (td, r) => chip(td, r.band) },
       ], tb);
     }
 
@@ -924,6 +936,8 @@
         { key: 'agents', label: 'Counsellors', num: true, fmt: int },
         { key: 'avg', label: 'Avg QA score', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
         { key: 'pass', label: 'Pass rate', num: true, fmt: share },
+        { key: 'fatal', label: 'Fatal', num: true, fmt: int, cls: (r) => (r.fatal ? 'bad' : '') },
+        { key: 'concerning', label: 'Concerning', num: true, fmt: int, cls: (r) => (r.concerning ? 'warn' : '') },
       ], src, { sort: 'n' });
       drawHBar(document.getElementById('c-src'), src.sort((a, b) => b.n - a.n).map((x) => ({ label: x.label, value: x.n, pct: x.shareOf, tip: [{ text: `${int(x.n)} audits · ${share(x.shareOf)} coverage` }, { text: `Avg score ${pct1(x.avg)}` }] })), (d) => `${int(d.value)} · ${share(d.pct)}`, 'audits');
     }
@@ -939,7 +953,8 @@
         { key: 'max', label: 'Highest', num: true, fmt: pct1 },
         { key: 'pass', label: 'Pass rate', num: true, fmt: share },
         { key: 'fatal', label: 'Fatal', num: true, fmt: int, cls: (r) => (r.fatal ? 'bad' : '') },
-        { key: 'band', label: 'Band', render: (td, r) => chip(td, r.band), sortVal: (r) => r.avg },
+        { key: 'concerning', label: 'Concerning', num: true, fmt: int, cls: (r) => (r.concerning ? 'warn' : '') },
+        { key: 'band', label: 'Performance category', render: (td, r) => chip(td, r.band), sortVal: (r) => r.avg },
       ], agents, { sort: 'avg', search: $('#s-agents'), text: (r) => [r.name, r.agent, r.category, r.am].join(' ') });
     }
 
@@ -992,11 +1007,14 @@
       const capRows = d3.groups(rows, (r) => r.category || 'Not tagged').map(([key, rs]) => {
         const z = sigmaStats(rs);
         return { key, label: key, n: z.n, mean: z.mean, sd: z.sd, ppk: z.ppk, dpmo: z.dpmo, sigma: z.sigma, rty: z.rty,
+          fatal: rs.filter(isFatal).length, concerning: rs.filter(isConcerning).length,
           verdict: z.ppk == null ? '—' : z.ppk >= 1.33 ? 'Capable' : z.ppk >= 1 ? 'Marginal' : 'Not capable' };
       });
       table('t-capcat', [
         { key: 'label', label: 'Category' },
         { key: 'n', label: 'Scored audits', num: true, fmt: int },
+        { key: 'fatal', label: 'Fatal', num: true, fmt: int, cls: (r) => (r.fatal ? 'bad' : '') },
+        { key: 'concerning', label: 'Concerning', num: true, fmt: int, cls: (r) => (r.concerning ? 'warn' : '') },
         { key: 'mean', label: 'Mean', num: true, fmt: pct1, cls: (r) => scoreCls(r.mean) },
         { key: 'sd', label: 'σ', num: true, fmt: (v) => (v == null ? '—' : v.toFixed(1)) },
         { key: 'ppk', label: 'Ppk', num: true, fmt: (v) => (v == null ? '—' : v.toFixed(2)), cls: (r) => (r.ppk == null ? '' : r.ppk >= 1.33 ? 'good' : r.ppk < 1 ? 'bad' : 'warn') },

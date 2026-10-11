@@ -17,5 +17,5 @@ Columns are matched by header name, so adding or moving sheet columns is safe; r
 column header is not. Nine scored parameters (Objection handling included, out of 100); NA
 parameters are left out, as in the sheet's Total Score.
 
-Scoring constants (top of the script in `index.html`): pass mark / LSL 70%, Top band 80%+,
+Scoring constants (top of the script in `index.html`): pass mark / LSL 70%; performance categories Strugglers <60%, Levellers <70%, Movers <80%, Rockers 80%+;
 parameter defect = score under 60% of its weight.

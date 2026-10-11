@@ -516,8 +516,6 @@
     const yR = d3.scaleLinear([0, 100], [h - 28, 12]);
     const ml = measure(svg, yL.ticks(4).map(int)) + 10, mr = measure(svg, ['100%']) + 10;
     const x = d3.scaleBand(days, [ml, w - mr]).padding(0.25);
-    svg.append('g').selectAll('line').data(yR.ticks(4)).join('line')
-      .attr('x1', ml).attr('x2', w - mr).attr('y1', yR).attr('y2', yR).attr('stroke', 'var(--cds-chart-grid)');
     const every = Math.max(1, Math.ceil(days.length / Math.max(2, Math.floor((w - ml - mr) / 56))));
     styleAxis(svg.append('g').attr('transform', `translate(0,${h - 28})`)
       .call(d3.axisBottom(x).tickValues(days.filter((_, i) => i % every === 0)).tickFormat((d) => dayFmt(pDate(d))).tickSizeOuter(0)));

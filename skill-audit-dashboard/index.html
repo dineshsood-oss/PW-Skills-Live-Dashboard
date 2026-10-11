@@ -581,8 +581,6 @@
     const y = d3.scaleLinear([0, d3.max(bins, (b) => b.n) || 1], [h - 28, 14]).nice();
     const ml = measure(svg, y.ticks(4).map(int)) + 10;
     const x = d3.scaleLinear([0, 100], [ml, w - measure(svg, ['100%']) / 2 - 4]);
-    svg.append('g').selectAll('line').data(y.ticks(4)).join('line')
-      .attr('x1', ml).attr('x2', w - 8).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
     styleAxis(svg.append('g').attr('transform', `translate(0,${h - 28})`).call(d3.axisBottom(x).ticks(5).tickFormat((v) => v + '%').tickSizeOuter(0)));
     styleAxis(svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(int))).select('.domain').remove();
     const tp = tipper(el);

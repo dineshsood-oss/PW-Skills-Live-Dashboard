@@ -25,9 +25,10 @@
 .good { color: var(--color-ok); } .bad { color: var(--color-bad); } .warn { color: var(--color-warn); }
 .qa-chart { position: relative; min-height: 260px; }
 .qa-chart.tall { min-height: 320px; }
-.qa-chart svg { display: block; overflow: visible; }
+.qa-chart { overflow: hidden; }
+.qa-chart svg { display: block; overflow: hidden; max-width: 100%; }
 .qa-chart text { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-caption); fill: var(--color-fg-muted); }
-.qa-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; }
+.qa-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); max-width: min(18rem, calc(100% - 8px)); white-space: normal; overflow-wrap: anywhere; }
 .qa-tip .h { color: var(--cds-text-secondary); margin-bottom: 2px; }
 .qa-tip .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
 .qa-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: var(--cds-gap-sm); }
@@ -39,7 +40,9 @@
 .qa-table th.num, .qa-table td.num { text-align: right; }
 .qa-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
 .qa-table tr:last-child td { border-bottom: 0; }
-.qa-table td.wrap { white-space: normal; min-width: 9rem; }
+.qa-table td.wrap { white-space: normal; min-width: 8rem; max-width: 14rem; }
+.qa-card { overflow: hidden; }
+.qa-tablewrap { max-width: 100%; }
 .qa-sub { display: block; color: var(--color-fg-muted); }
 .chip { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: var(--cds-font-size-caption); line-height: 1.6; }
 .chip.Top { background: color-mix(in srgb, var(--color-ok) 18%, transparent); color: var(--color-ok); }
@@ -113,7 +116,7 @@
       <div class="qa-card" id="card-topbottom" data-source="audits">
         <h2>Top and bottom five counsellors</h2>
         <p class="qa-note">Ranked by average QA score, counsellors with 2+ scored audits.</p>
-        <div id="t-topbottom"></div>
+        <div class="qa-tablewrap" id="t-topbottom"></div>
       </div>
     </div>
   </section>
@@ -435,6 +438,14 @@
     t.remove();
     return w;
   };
+  const fit = (sel, maxW) => sel.each(function () {
+    const full = this.textContent;
+    if (maxW <= 12) { this.textContent = ''; return; }
+    if (this.getComputedTextLength() <= maxW) return;
+    let lo = 0, hi = full.length;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; this.textContent = full.slice(0, mid) + '…'; if (this.getComputedTextLength() <= maxW) lo = mid; else hi = mid - 1; }
+    this.textContent = full.slice(0, lo) + '…';
+  });
   const styleAxis = (g) => {
     g.attr('font-size', null).attr('font-family', null);
     g.selectAll('.domain').attr('stroke', 'var(--cds-chart-axis)');
@@ -442,7 +453,7 @@
     return g;
   };
   const svgFor = (el, h) => {
-    const w = Math.max(240, el.clientWidth);
+    const w = Math.max(160, Math.floor(el.getBoundingClientRect().width));
     const svg = d3.select(el).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${w} ${h}`).attr('height', h);
     return { svg, w, h };
   };
@@ -542,7 +553,7 @@
     const { svg, w, h } = svgFor(el, 240);
     const y = d3.scaleLinear([0, d3.max(bins, (b) => b.n) || 1], [h - 28, 14]).nice();
     const ml = measure(svg, y.ticks(4).map(int)) + 10;
-    const x = d3.scaleLinear([0, 100], [ml, w - 8]);
+    const x = d3.scaleLinear([0, 100], [ml, w - measure(svg, ['100%']) / 2 - 4]);
     svg.append('g').selectAll('line').data(y.ticks(4)).join('line')
       .attr('x1', ml).attr('x2', w - 8).attr('y1', y).attr('y2', y).attr('stroke', 'var(--cds-chart-grid)');
     styleAxis(svg.append('g').attr('transform', `translate(0,${h - 28})`).call(d3.axisBottom(x).ticks(5).tickFormat((v) => v + '%').tickSizeOuter(0)));
@@ -564,8 +575,11 @@
     }
     const lx = x(LSL), mxp = x(m);
     const apart = Math.abs(lx - mxp) > 70;
-    svg.append('text').attr('x', lx - 4).attr('y', 10).attr('text-anchor', 'end').text('Pass 70%');
-    svg.append('text').attr('x', mxp + 4).attr('y', apart ? 10 : 24).text(`Mean ${pct1(m)}`);
+    const passW = measure(svg, ['Pass 70%']), meanW = measure(svg, [`Mean ${pct1(m)}`]);
+    const pass = lx - 4 - passW >= 0 ? { x: lx - 4, a: 'end' } : { x: lx + 4, a: 'start' };
+    const mean = mxp + 4 + meanW <= w ? { x: mxp + 4, a: 'start' } : { x: mxp - 4, a: 'end' };
+    svg.append('text').attr('x', pass.x).attr('y', 10).attr('text-anchor', pass.a).text('Pass 70%');
+    svg.append('text').attr('x', mean.x).attr('y', apart ? 10 : 24).attr('text-anchor', mean.a).text(`Mean ${pct1(m)}`);
   };
 
   const drawHBar = (el, items, fmtV, label) => {
@@ -573,13 +587,13 @@
     if (!items.length) return empty(el, 'Nothing to show in this period.');
     const rowH = 26;
     const { svg, w } = svgFor(el, items.length * rowH + 8);
-    const lw = Math.min(w * 0.45, measure(svg, items.map((d) => d.label)) + 8);
+    const lw = Math.min(w * 0.42, measure(svg, items.map((d) => d.label)) + 8);
     const vw = measure(svg, items.map((d) => fmtV(d))) + 8;
-    const x = d3.scaleLinear([0, d3.max(items, (d) => d.value) || 1], [lw, w - vw]);
+    const x = d3.scaleLinear([0, d3.max(items, (d) => d.value) || 1], [lw, Math.max(lw + 20, w - vw - 6)]);
     const tp = tipper(el);
     const g = svg.selectAll('g.r').data(items).join('g').attr('transform', (_, i) => `translate(0,${i * rowH + 4})`);
     g.append('text').attr('x', lw - 8).attr('y', rowH / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
-      .text((d) => (d.label.length > 34 ? d.label.slice(0, 33) + '…' : d.label));
+      .text((d) => d.label).call((s) => fit(s, lw - 10));
     g.append('rect').attr('x', lw).attr('y', 4).attr('height', rowH - 10).attr('rx', 4)
       .attr('width', (d) => Math.max(2, x(d.value) - lw)).attr('fill', (d, i) => (i === 0 ? dash.colors[0] : 'var(--cds-chart-muted)'));
     g.append('text').attr('x', (d) => x(d.value) + 6).attr('y', rowH / 2).attr('dy', '0.35em').style('fill', 'var(--color-fg)').text((d) => fmtV(d));
@@ -596,14 +610,22 @@
     let cum = 0;
     items.forEach((p) => { cum += p.miss; p.cum = cum / total; });
     const { svg, w, h } = svgFor(el, 320);
-    const y = d3.scaleLinear([0, d3.max(items, (p) => p.miss)], [h - 70, 14]).nice();
-    const yR = d3.scaleLinear([0, 1], [h - 70, 14]);
-    const ml = measure(svg, y.ticks(4).map(int)) + 10, mr = measure(svg, ['100%']) + 10;
-    const x = d3.scaleBand(items.map((p) => p.id), [ml, w - mr]).padding(0.25);
+    const short0 = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', obj: 'Objection', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
+    const labW = measure(svg, items.map((p) => short0[p.id]));
+    const rot = (35 * Math.PI) / 180;
+    const bottom = Math.ceil(labW * Math.sin(rot)) + 22;
+    const yMaxPx = h - bottom;
+    const y = d3.scaleLinear([0, d3.max(items, (p) => p.miss)], [yMaxPx, 14]).nice();
+    const yR = d3.scaleLinear([0, 1], [yMaxPx, 14]);
+    const mr = measure(svg, ['100%']) + 10;
+    let ml = measure(svg, y.ticks(4).map(int)) + 10;
+    let x = d3.scaleBand(items.map((p) => p.id), [ml, w - mr]).padding(0.25);
+    const need = labW * Math.cos(rot) + 6 - x.bandwidth() / 2;
+    if (need > ml) { ml = need; x = d3.scaleBand(items.map((p) => p.id), [ml, w - mr]).padding(0.25); }
     svg.append('g').selectAll('line').data(yR.ticks(4)).join('line')
       .attr('x1', ml).attr('x2', w - mr).attr('y1', yR).attr('y2', yR).attr('stroke', 'var(--cds-chart-grid)');
     const short = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', obj: 'Objection', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
-    const ax = styleAxis(svg.append('g').attr('transform', `translate(0,${h - 70})`).call(d3.axisBottom(x).tickFormat((id) => short[id]).tickSizeOuter(0)));
+    const ax = styleAxis(svg.append('g').attr('transform', `translate(0,${yMaxPx})`).call(d3.axisBottom(x).tickFormat((id) => short[id]).tickSizeOuter(0)));
     ax.selectAll('text').attr('transform', 'rotate(-35)').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.6em');
     styleAxis(svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(int))).select('.domain').remove();
     styleAxis(svg.append('g').attr('transform', `translate(${w - mr},0)`).call(d3.axisRight(yR).ticks(4).tickFormat(d3.format('.0%')))).select('.domain').remove();
@@ -620,7 +642,7 @@
     svg.append('g').selectAll('circle').data(items).join('circle').attr('cx', (p) => x(p.id) + x.bandwidth() / 2).attr('cy', (p) => yR(p.cum)).attr('r', 3).attr('fill', dash.colors[1]);
     const tp = tipper(el);
     svg.append('g').selectAll('rect').data(items).join('rect')
-      .attr('x', (p) => x(p.id) - (x.step() - x.bandwidth()) / 2).attr('width', x.step()).attr('y', 0).attr('height', h - 70).attr('fill', 'transparent')
+      .attr('x', (p) => x(p.id) - (x.step() - x.bandwidth()) / 2).attr('width', x.step()).attr('y', 0).attr('height', yMaxPx).attr('fill', 'transparent')
       .on('mousemove', (ev, p) => {
         const [mx, my] = d3.pointer(ev, el);
         tp.show(p.name, [{ color: dash.colors[0], text: `${int(p.miss)} misses · ${share(p.missRate)} of audits` }, { color: dash.colors[1], text: `Running share ${share(p.cum)}` }], mx, my);
@@ -762,8 +784,8 @@
     { key: 'avg', label: 'Avg QA score', num: true, fmt: pct1, cls: (r) => scoreCls(r.avg) },
     { key: 'pass', label: 'Pass rate', num: true, fmt: share },
     { key: 'fatal', label: 'Fatal', num: true, fmt: int, cls: (r) => (r.fatal ? 'bad' : '') },
-    { key: 'top', label: 'Top scorer', render: person('top'), sortVal: (r) => r.top?.avg },
-    { key: 'bottom', label: 'Bottom performer', render: person('bottom'), sortVal: (r) => r.bottom?.avg },
+    { key: 'top', label: 'Top scorer', render: person('top'), cls: () => 'wrap', sortVal: (r) => r.top?.avg },
+    { key: 'bottom', label: 'Bottom performer', render: person('bottom'), cls: () => 'wrap', sortVal: (r) => r.bottom?.avg },
     { key: 'mix', label: 'Band mix T·M·B', render: mixCell, sortVal: (r) => r.mix.Top - r.mix.Bottom },
   ];
 

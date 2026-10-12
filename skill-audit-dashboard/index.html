@@ -46,6 +46,34 @@
   .qa-side.is-collapsed .qa-group { flex-direction: row; }
 }
 @media (prefers-reduced-motion: reduce) { .qa-side { transition: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  /* section entrance: cards rise in, staggered in reading order */
+  .qa-enter .qa-card { animation: qa-rise 460ms var(--cds-ease-out) both; }
+  .qa-enter .qa-kpis > .qa-card:nth-child(2) { animation-delay: 40ms; }
+  .qa-enter .qa-kpis > .qa-card:nth-child(3) { animation-delay: 80ms; }
+  .qa-enter .qa-kpis > .qa-card:nth-child(4) { animation-delay: 120ms; }
+  .qa-enter .qa-kpis > .qa-card:nth-child(5) { animation-delay: 160ms; }
+  .qa-enter .qa-kpis > .qa-card:nth-child(6) { animation-delay: 200ms; }
+  .qa-enter .qa-kpis > .qa-card:nth-child(7) { animation-delay: 240ms; }
+  .qa-enter .qa-grid > .qa-card:nth-child(1) { animation-delay: 120ms; }
+  .qa-enter .qa-grid > .qa-card:nth-child(2) { animation-delay: 190ms; }
+  .qa-enter .qa-grid > .qa-card:nth-child(3) { animation-delay: 260ms; }
+  .qa-enter .qa-grid > .qa-card:nth-child(4) { animation-delay: 330ms; }
+  .qa-enter .qa-grid > .qa-card:nth-child(n+5) { animation-delay: 400ms; }
+  @keyframes qa-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  /* press feedback on everything clickable */
+  .qa-tab, .qa-btn, .qa-iconbtn, .qa-table th button { transition: transform 120ms var(--cds-ease-out), background-color 200ms var(--cds-ease-out), color 200ms var(--cds-ease-out); }
+  .qa-tab:active, .qa-btn:active, .qa-iconbtn:active, .qa-table th button:active { transform: scale(.96); }
+  .qa-iconbtn#qa-menu svg { transition: transform 240ms var(--cds-ease-out); }
+  .qa-side.is-collapsed #qa-menu svg { transform: rotate(90deg); }
+  .qa-filters select, .qa-filters input { transition: border-color 160ms ease, box-shadow 160ms ease; }
+  .qa-filters select:focus, .qa-filters input:focus { border-color: var(--pw-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pw-accent) 22%, transparent); }
+  /* re-sorted table rows settle in */
+  .qa-table.is-fresh tbody tr { animation: qa-fade 280ms var(--cds-ease-out) both; }
+  @keyframes qa-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .qa-badge:not([hidden]) { animation: qa-pop 260ms var(--cds-ease-out); }
+  @keyframes qa-pop { from { transform: scale(.4); } to { transform: scale(1); } }
+}
 .qa-page[hidden] { display: none; }
 .qa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
 .qa-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
@@ -382,17 +410,18 @@
   const P = () => ({ month: 'all', week: 'all', from: null, to: null, category: 'all', ...dash.params() });
 
   const fMonth = $('.f-month'), fWeek = $('.f-week'), fFrom = $('.f-from'), fTo = $('.f-to'), fCat = $('.f-cat');
-  fMonth.addEventListener('change', () => dash.setParams({ month: fMonth.value, week: 'all' }));
-  fWeek.addEventListener('change', () => dash.setParams({ week: fWeek.value }));
-  fCat.addEventListener('change', () => dash.setParams({ category: fCat.value }));
+  const animNext = () => { pendingAnim = true; };
+  fMonth.addEventListener('change', () => { animNext(); dash.setParams({ month: fMonth.value, week: 'all' }); });
+  fWeek.addEventListener('change', () => { animNext(); dash.setParams({ week: fWeek.value }); });
+  fCat.addEventListener('change', () => { animNext(); dash.setParams({ category: fCat.value }); });
   for (const [el, name] of [[fFrom, 'from'], [fTo, 'to']]) {
     el.addEventListener('change', () => {
-      if (!el.value) dash.setParams({ [name]: null });
-      else if (el.validity.valid) dash.setParams({ [name]: el.value });
+      if (!el.value) { animNext(); dash.setParams({ [name]: null }); }
+      else if (el.validity.valid) { animNext(); dash.setParams({ [name]: el.value }); }
     });
     el.addEventListener('blur', () => { el.value = P()[name] ?? ''; });
   }
-  $('.f-reset').addEventListener('click', () => { dash.resetParams(); setDefaults(); });
+  $('.f-reset').addEventListener('click', () => { animNext(); dash.resetParams(); setDefaults(); });
 
   const windowOf = (p, rows) => {
     let s = null, e = null;
@@ -542,6 +571,45 @@
     el.append(lg);
   };
 
+  // ---------- motion ----------
+  // Charts animate only on load, on a section change and on a filter change; resizes redraw instantly.
+  const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pendingAnim = true, ANIM = false;
+  const DUR = 650, EASE = d3.easeCubicOut;
+  const growUp = (sel, base) => {
+    if (!ANIM) return;
+    sel.each(function (_, i) {
+      const r = d3.select(this), y = +r.attr('y'), hh = +r.attr('height');
+      r.attr('y', base).attr('height', 0).transition().delay(i * 28).duration(DUR).ease(EASE).attr('y', y).attr('height', hh);
+    });
+  };
+  const growRight = (sel) => {
+    if (!ANIM) return;
+    sel.each(function (_, i) {
+      const r = d3.select(this), wd = +r.attr('width');
+      r.attr('width', 0).transition().delay(i * 40).duration(DUR).ease(EASE).attr('width', wd);
+    });
+  };
+  const drawOn = (path, delay = 0) => {
+    if (!ANIM || !path.node()) return;
+    const L = path.node().getTotalLength();
+    path.attr('stroke-dasharray', `${L} ${L}`).attr('stroke-dashoffset', L)
+      .transition().delay(delay).duration(900).ease(d3.easeCubicInOut).attr('stroke-dashoffset', 0)
+      .on('end', function () { d3.select(this).attr('stroke-dasharray', null).attr('stroke-dashoffset', null); });
+  };
+  const fadeIn = (sel, delay = 0, step = 0) => {
+    if (!ANIM) return;
+    sel.attr('opacity', 0).transition().delay((_, i) => delay + i * step).duration(300).attr('opacity', 1);
+  };
+  const countUp = (el, text) => {
+    const m = /^([+−-]?)([\d,]*\.?\d+)(.*)$/.exec(text);
+    if (!ANIM || !m) return;
+    const target = +m[2].replace(/,/g, ''), dec = (m[2].split('.')[1] || '').length, f = d3.format(`,.${dec}f`);
+    d3.select(el).transition().duration(800).ease(EASE)
+      .tween('text', () => (t) => { el.textContent = m[1] + f(target * t) + m[3]; })
+      .on('end', () => { el.textContent = text; });
+  };
+
   const drawDaily = (el, rows, win) => {
     clear(el);
     if (!rows.length) return empty(el, 'No audits in this period.');
@@ -569,13 +637,16 @@
     svg.append('g').selectAll('rect').data(data).join('rect')
       .attr('x', (d) => x(d.d) + (x.bandwidth() - bw) / 2).attr('width', bw)
       .attr('y', (d) => yL(d.n)).attr('height', (d) => yL(0) - yL(d.n)).attr('rx', 4)
-      .attr('fill', ACCENT).attr('opacity', 0.85);
+      .attr('fill', ACCENT).attr('opacity', 0.85)
+      .call((s) => growUp(s, yL(0)));
     const pts = data.filter((d) => d.avg != null);
     svg.append('path').datum(pts)
       .attr('d', d3.line().x((d) => x(d.d) + x.bandwidth() / 2).y((d) => yR(d.avg)))
-      .attr('fill', 'none').attr('stroke', LINE).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round');
+      .attr('fill', 'none').attr('stroke', LINE).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
+      .call((s) => drawOn(s, 350));
     svg.append('g').selectAll('circle').data(pts).join('circle')
-      .attr('cx', (d) => x(d.d) + x.bandwidth() / 2).attr('cy', (d) => yR(d.avg)).attr('r', 3).attr('fill', LINE);
+      .attr('cx', (d) => x(d.d) + x.bandwidth() / 2).attr('cy', (d) => yR(d.avg)).attr('r', 3).attr('fill', LINE)
+      .call((s) => fadeIn(s, 450, 60));
     const tp = tipper(el);
     svg.append('g').selectAll('rect').data(data).join('rect')
       .attr('x', (d) => x(d.d) - (x.step() - x.bandwidth()) / 2).attr('width', x.step()).attr('y', 0).attr('height', h - 28).attr('fill', 'transparent')
@@ -600,16 +671,23 @@
     const g = svg.append('g').attr('transform', `translate(${w / 2},${h / 2})`);
     const arcs = d3.pie().sort(null).value((d) => d.n)(counts);
     const tp = tipper(el);
+    const arcGen = d3.arc().innerRadius(r * 0.62).outerRadius(r).padAngle(0.015).cornerRadius(3);
     g.selectAll('path').data(arcs).join('path')
-      .attr('d', d3.arc().innerRadius(r * 0.62).outerRadius(r).padAngle(0.015).cornerRadius(3))
+      .attr('d', arcGen)
       .attr('fill', (d) => BAND_COLOR[d.data.b])
+      .call((s) => {
+        if (!ANIM) return;
+        s.transition().delay((_, i) => i * 120).duration(DUR).ease(EASE)
+          .attrTween('d', (d) => { const it = d3.interpolate({ ...d, endAngle: d.startAngle }, d); return (t) => arcGen(it(t)); });
+      })
       .on('mousemove', (ev, d) => {
         const [mx, my] = d3.pointer(ev, el);
         tp.show(d.data.b, [{ text: `${int(d.data.n)} counsellors · ${share(d.data.n / total)}` }], mx, my);
       })
       .on('mouseleave', () => tp.hide());
     g.append('text').attr('text-anchor', 'middle').attr('dy', '-0.1em').style('font-family', 'var(--font-anthropic-serif)')
-      .style('font-size', 'var(--cds-font-size-title)').style('fill', 'var(--color-fg)').text(int(total));
+      .style('font-size', 'var(--cds-font-size-title)').style('fill', 'var(--color-fg)').text(int(total))
+      .each(function () { countUp(this, int(total)); });
     g.append('text').attr('text-anchor', 'middle').attr('dy', '1.4em').text('counsellors');
     legend(el, counts.map((c) => ({ color: BAND_COLOR[c.b], label: `${c.b} ${int(c.n)} (${share(c.n / total)})` })));
   };
@@ -630,6 +708,7 @@
       .attr('x', (b) => x(b.lo) + 2).attr('width', (b) => Math.max(1, x(b.hi) - x(b.lo) - 4))
       .attr('y', (b) => y(b.n)).attr('height', (b) => y(0) - y(b.n)).attr('rx', 4)
       .attr('fill', (b) => (b.hi <= LSL ? 'var(--cds-chart-status-critical)' : ACCENT))
+      .call((s) => growUp(s, y(0)))
       .on('mousemove', (ev, b) => {
         const [mx, my] = d3.pointer(ev, el);
         tp.show(`${b.lo}–${b.hi}%`, [{ text: `${int(b.n)} audits · ${share(b.n / sc.length)}` }], mx, my);
@@ -662,8 +741,10 @@
     g.append('text').attr('x', lw - 8).attr('y', rowH / 2).attr('dy', '0.35em').attr('text-anchor', 'end')
       .text((d) => d.label).call((s) => fit(s, lw - 10));
     g.append('rect').attr('x', lw).attr('y', 4).attr('height', rowH - 10).attr('rx', 4)
-      .attr('width', (d) => Math.max(2, x(d.value) - lw)).attr('fill', (d, i) => (i === 0 ? ACCENT : 'var(--cds-chart-muted)'));
-    g.append('text').attr('x', (d) => x(d.value) + 6).attr('y', rowH / 2).attr('dy', '0.35em').style('fill', 'var(--color-fg)').text((d) => fmtV(d));
+      .attr('width', (d) => Math.max(2, x(d.value) - lw)).attr('fill', (d, i) => (i === 0 ? ACCENT : 'var(--cds-chart-muted)'))
+      .call(growRight);
+    g.append('text').attr('x', (d) => x(d.value) + 6).attr('y', rowH / 2).attr('dy', '0.35em').style('fill', 'var(--color-fg)').text((d) => fmtV(d))
+      .call((s) => fadeIn(s, 350, 40));
     g.append('rect').attr('x', 0).attr('width', w).attr('height', rowH).attr('fill', 'transparent')
       .on('mousemove', (ev, d) => { const [mx, my] = d3.pointer(ev, el); tp.show(d.label, d.tip || [{ text: `${fmtV(d)} ${label}` }], mx, my); })
       .on('mouseleave', () => tp.hide());
@@ -703,10 +784,13 @@
     for (const p of items) { if (!reached) vital.add(p.id); if (p.cum >= 0.8) reached = true; }
     svg.append('g').selectAll('rect').data(items).join('rect')
       .attr('x', (p) => x(p.id) + (x.bandwidth() - bw) / 2).attr('width', bw).attr('y', (p) => y(p.miss)).attr('height', (p) => y(0) - y(p.miss)).attr('rx', 4)
-      .attr('fill', (p) => (vital.has(p.id) ? ACCENT : 'var(--cds-chart-muted)'));
+      .attr('fill', (p) => (vital.has(p.id) ? ACCENT : 'var(--cds-chart-muted)'))
+      .call((s) => growUp(s, y(0)));
     svg.append('path').datum(items).attr('d', d3.line().x((p) => x(p.id) + x.bandwidth() / 2).y((p) => yR(p.cum)))
-      .attr('fill', 'none').attr('stroke', LINE).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
-    svg.append('g').selectAll('circle').data(items).join('circle').attr('cx', (p) => x(p.id) + x.bandwidth() / 2).attr('cy', (p) => yR(p.cum)).attr('r', 3).attr('fill', LINE);
+      .attr('fill', 'none').attr('stroke', LINE).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
+      .call((s) => drawOn(s, 350));
+    svg.append('g').selectAll('circle').data(items).join('circle').attr('cx', (p) => x(p.id) + x.bandwidth() / 2).attr('cy', (p) => yR(p.cum)).attr('r', 3).attr('fill', LINE)
+      .call((s) => fadeIn(s, 450, 60));
     const tp = tipper(el);
     svg.append('g').selectAll('rect').data(items).join('rect')
       .attr('x', (p) => x(p.id) - (x.step() - x.bandwidth()) / 2).attr('width', x.step()).attr('y', 0).attr('height', yMaxPx).attr('fill', 'transparent')
@@ -759,10 +843,11 @@
     const ends = [['UCL', y(last.ucl)], ['Mean', y(cl)], ['LCL', y(last.lcl)]];
     for (let i = 1; i < ends.length; i++) if (ends[i][1] - ends[i - 1][1] < 12) ends[i][1] = ends[i - 1][1] + 12;
     for (const [t, yy] of ends) svg.append('text').attr('x', w - mr + 6).attr('y', yy).attr('dy', '0.35em').text(t);
-    svg.append('path').datum(data).attr('d', d3.line().x((p) => x(p.d)).y((p) => y(p.m))).attr('fill', 'none').attr('stroke', ACCENT).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round');
+    svg.append('path').datum(data).attr('d', d3.line().x((p) => x(p.d)).y((p) => y(p.m))).attr('fill', 'none').attr('stroke', ACCENT).attr('stroke-width', 2).attr('stroke-linejoin', 'round').attr('stroke-linecap', 'round')
+      .call((s) => drawOn(s, 100));
     svg.append('g').selectAll('circle.ring').data(data.filter((p) => p.run)).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.m)).attr('r', 7).attr('fill', 'none').attr('stroke', 'var(--color-warn)').attr('stroke-width', 1.5);
     svg.append('g').selectAll('circle.pt').data(data).join('circle').attr('cx', (p) => x(p.d)).attr('cy', (p) => y(p.m)).attr('r', (p) => (p.out ? 5 : 3.5))
-      .attr('fill', (p) => (p.out ? 'var(--cds-chart-status-critical)' : ACCENT));
+      .attr('fill', (p) => (p.out ? 'var(--cds-chart-status-critical)' : ACCENT)).call((s) => fadeIn(s, 500, 25));
     const tp = tipper(el);
     const vor = d3.Delaunay.from(data, (p) => x(p.d), (p) => y(p.m));
     svg.append('rect').attr('x', ml).attr('y', 0).attr('width', w - ml - mr).attr('height', h - 28).attr('fill', 'transparent')
@@ -799,7 +884,7 @@
       });
     }
     const t = document.createElement('table');
-    t.className = 'qa-table' + (opt.cls ? ' ' + opt.cls : '');
+    t.className = 'qa-table' + (opt.cls ? ' ' + opt.cls : '') + (opt.fresh ? ' is-fresh' : '');
     const hr = t.createTHead().insertRow();
     for (const c of cols) {
       const th = document.createElement('th');
@@ -811,7 +896,7 @@
       b.addEventListener('click', () => {
         if (st.sort === c.key) st.dir = st.dir === 'asc' ? 'desc' : 'asc';
         else { st.sort = c.key; st.dir = c.num ? 'desc' : 'asc'; }
-        table(id, cols, rows, opt);
+        table(id, cols, rows, { ...opt, fresh: true });
       });
       th.append(b);
       hr.append(th);
@@ -865,11 +950,19 @@
   // ---------- tabs ----------
   const tabs = [...document.querySelectorAll('.qa-tab')];
   let current = 'overview';
+  const enter = (page) => {
+    if (RM || !page) return;
+    page.classList.remove('qa-enter');
+    void page.offsetWidth; // restart the entrance animation
+    page.classList.add('qa-enter');
+  };
   const show = (id, link) => {
     current = id;
+    pendingAnim = true;
     tabs.forEach((t) => t.setAttribute('aria-current', t.dataset.tab === id ? 'page' : 'false'));
     document.querySelectorAll('.qa-page').forEach((p) => { p.hidden = p.id !== id; });
     if (link) dash.setLink(id);
+    enter(document.getElementById(id));
     draw();
   };
   tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.tab, true)));
@@ -890,7 +983,7 @@
   $('#s-heat').addEventListener('input', () => draw());
 
   // ---------- main draw ----------
-  const setText = (id, v, cls) => { const el = document.getElementById(id); el.textContent = v; el.classList.remove('dash-skeleton', 'good', 'bad', 'warn'); if (cls) el.classList.add(cls); };
+  const setText = (id, v, cls) => { const el = document.getElementById(id); d3.select(el).interrupt(); el.textContent = v; el.classList.remove('dash-skeleton', 'good', 'bad', 'warn'); if (cls) el.classList.add(cls); countUp(el, v); };
   const delta = (id, cur, prev, unit, goodUp, label) => {
     const el = document.getElementById(id);
     el.classList.remove('good', 'bad');
@@ -901,6 +994,7 @@
     if (d !== 0) el.classList.add((d > 0) === goodUp ? 'good' : 'bad');
   };
 
+  let firstLoad = true;
   function draw() {
     const res = dash.data('audits');
     const charts = ['c-daily', 'c-bands', 'c-hist', 'c-src', 'c-pareto', 'c-train', 'c-control'].map((id) => document.getElementById(id));
@@ -914,6 +1008,9 @@
       return;
     }
     charts.forEach((el) => el.classList.remove('dash-skeleton'));
+    ANIM = pendingAnim && !RM;
+    if (ANIM && firstLoad) { firstLoad = false; enter(document.getElementById(current)); }
+    pendingAnim = false;
     const all = res.data;
     nameOf = new Map();
     all.slice().sort((a, b) => d3.ascending(a.ts, b.ts)).forEach((r) => { if (r.agent_name) nameOf.set(r.agent, r.agent_name); });

@@ -149,6 +149,21 @@
   .qa-page.enter { animation: qa-in var(--cds-dur-slow) var(--cds-ease-out); }
   @keyframes qa-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 }
+.qa-card.has-export { position: relative; }
+.qa-card.has-export > h2 { padding-right: 11rem; }
+.qa-export { position: absolute; top: var(--cds-pad-lg); right: var(--cds-pad-lg); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 60%; }
+.qa-xbtn { font: inherit; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 1px solid var(--color-border-line); border-radius: 8px; background: var(--color-panel); color: var(--color-fg); cursor: pointer; white-space: nowrap; }
+.qa-xbtn:hover { border-color: var(--color-fg-muted); }
+.qa-xbtn:focus-visible { outline: 2px solid var(--color-fg); outline-offset: 2px; }
+.qa-xbtn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.qa-xbtn[disabled] { opacity: .5; cursor: progress; }
+.qa-xmsg { flex-basis: 100%; text-align: right; font-size: 12px; color: var(--color-fg-muted); min-height: 1em; }
+.qa-xmsg.bad { color: var(--color-bad); }
+@media (max-width: 760px) {
+  .qa-card.has-export > h2 { padding-right: 0; }
+  .qa-export { position: static; max-width: none; justify-content: flex-start; margin: 4px 0 8px; }
+  .qa-xmsg { text-align: left; }
+}
 </style>
 
 <div class="qa">
@@ -381,3 +396,5 @@
 
 <script src="calcs.js"></script>
 <script src="app.js"></script>
+<script src="export.js"></script>
+

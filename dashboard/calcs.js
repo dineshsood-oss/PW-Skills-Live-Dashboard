@@ -289,3 +289,4 @@ dash.calc('scope_summary', {
     return rows;
   },
 });
+

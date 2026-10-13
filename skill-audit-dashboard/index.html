@@ -75,6 +75,8 @@
   @keyframes qa-pop { from { transform: scale(.4); } to { transform: scale(1); } }
 }
 .qa-page[hidden] { display: none; }
+.qa-pair { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--cds-gap-md); }
+@container qa (max-width: 760px) { .qa-pair { grid-template-columns: minmax(0, 1fr); } }
 .qa-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
 .qa-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr)); gap: var(--cds-gap-md); margin-bottom: var(--cds-gap-md); }
 .qa-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 14px; padding: var(--cds-pad-lg); min-width: 0; }
@@ -108,6 +110,9 @@
 .qa-chart { overflow: hidden; }
 .qa-chart svg { display: block; overflow: hidden; max-width: 100%; }
 .qa-chart text { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-caption); fill: var(--color-fg-muted); }
+#c-daily text, #c-daily .qa-legend { font-weight: 700; }
+#c-daily text { fill: var(--color-fg); }
+#c-daily text.qa-dot-label { fill: #FFFFFF; font-size: 10px; }
 .qa-tip { position: absolute; z-index: 5; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); max-width: min(18rem, calc(100% - 8px)); white-space: normal; overflow-wrap: anywhere; }
 .qa-tip .h { color: var(--cds-text-secondary); margin-bottom: 2px; }
 .qa-tip .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
@@ -274,6 +279,7 @@
         <p class="qa-note">Achievement is the average score as a share of the parameter's weight. A miss is an audit scoring under 60% of the weight. Audits where a parameter is NA don't count toward it, matching how the sheet's Total Score leaves NA parameters out of the 100.</p>
         <div class="qa-tablewrap" id="t-params"></div>
       </div>
+      <div class="qa-pair">
       <div class="qa-card" id="card-pareto" data-source="audits">
         <h2>Pareto of parameter misses</h2>
         <p class="qa-note">Bars count misses; the line is the running share. Parameters left of the 80% line drive most of the gap.</p>
@@ -283,6 +289,7 @@
         <h2>Training areas identified</h2>
         <p class="qa-note">How often auditors flagged each training need.</p>
         <div class="qa-chart tall" id="c-train"></div>
+      </div>
       </div>
       <div class="qa-card wide" id="card-heat" data-source="audits">
         <h2>Individual scoring by parameter</h2>
@@ -638,8 +645,8 @@
       return { d, n: rs.length, avg: mean(sc) };
     });
     const { svg, w, h } = svgFor(el, 260);
-    const yL = d3.scaleLinear([0, d3.max(data, (x) => x.n) || 1], [h - 28, 12]).nice();
-    const yR = d3.scaleLinear([0, 100], [h - 28, 12]);
+    const yL = d3.scaleLinear([0, d3.max(data, (x) => x.n) || 1], [h - 28, 24]).nice();
+    const yR = d3.scaleLinear([0, 100], [h - 28, 20]);
     const ml = measure(svg, yL.ticks(4).map(int)) + 10, mr = measure(svg, ['100%']) + 10;
     const x = d3.scaleBand(days, [ml, w - mr]).padding(0.25);
     const every = Math.max(1, Math.ceil(days.length / Math.max(2, Math.floor((w - ml - mr) / 56))));
@@ -655,14 +662,25 @@
       .attr('y', (d) => yL(d.n)).attr('height', (d) => yL(0) - yL(d.n)).attr('rx', 4)
       .attr('fill', ACCENT).attr('opacity', 0.85)
       .call((s) => growUp(s, yL(0)));
+    // Audit count on top of each bar
+    svg.append('g').selectAll('text').data(data.filter((d) => d.n > 0)).join('text')
+      .attr('x', (d) => x(d.d) + x.bandwidth() / 2).attr('y', (d) => yL(d.n) - 5).attr('text-anchor', 'middle')
+      .style('font-size', bw < 16 ? '9px' : null).text((d) => int(d.n))
+      .call((s) => fadeIn(s, 300, 30));
     const pts = data.filter((d) => d.avg != null);
     svg.append('path').datum(pts)
       .attr('d', d3.line().x((d) => x(d.d) + x.bandwidth() / 2).y((d) => yR(d.avg)))
       .attr('fill', 'none').attr('stroke', LINE).attr('stroke-width', 2).attr('stroke-linecap', 'round').attr('stroke-linejoin', 'round')
       .call((s) => drawOn(s, 350));
-    svg.append('g').selectAll('circle').data(pts).join('circle')
-      .attr('cx', (d) => x(d.d) + x.bandwidth() / 2).attr('cy', (d) => yR(d.avg)).attr('r', 3).attr('fill', LINE)
+    // Average QA score shown inside each dot, in white
+    const lblW = (d) => String(Math.round(d.avg)).length * 6.2 + 14;
+    const dots = svg.append('g').selectAll('g').data(pts).join('g')
+      .attr('transform', (d) => `translate(${x(d.d) + x.bandwidth() / 2},${yR(d.avg)})`)
       .call((s) => fadeIn(s, 450, 60));
+    dots.append('rect').attr('x', (d) => -lblW(d) / 2).attr('y', -9).attr('width', lblW).attr('height', 18).attr('rx', 9)
+      .attr('fill', LINE).attr('stroke', 'var(--color-panel)').attr('stroke-width', 1);
+    dots.append('text').attr('class', 'qa-dot-label').attr('text-anchor', 'middle').attr('dy', '0.35em')
+      .text((d) => Math.round(d.avg) + '%');
     // Days with audits but no score yet (the sheet's score formulas not yet filled for those rows)
     const pending = data.filter((d) => d.n > 0 && d.avg == null);
     const lastPt = pts.length ? pts[pts.length - 1] : null;
@@ -797,24 +815,49 @@
     if (!total) return empty(el, 'No parameter misses in this period.');
     let cum = 0;
     items.forEach((p) => { cum += p.miss; p.cum = cum / total; });
-    const { svg, w, h } = svgFor(el, 320);
-    const short0 = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', obj: 'Objection', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
-    const labW = measure(svg, items.map((p) => short0[p.id]));
-    const rot = (35 * Math.PI) / 180;
-    const bottom = Math.ceil(labW * Math.sin(rot)) + 22;
-    const yMaxPx = h - bottom;
+    // Full parameter names: wrapped under each bar, or slanted when the bars are too narrow to wrap.
+    const { svg, w } = svgFor(el, 320);
+    const plotH = 250, yMaxPx = plotH;
     const y = d3.scaleLinear([0, d3.max(items, (p) => p.miss)], [yMaxPx, 14]).nice();
     const yR = d3.scaleLinear([0, 1], [yMaxPx, 14]);
     const mr = measure(svg, ['100%']) + 10;
     let ml = measure(svg, y.ticks(4).map(int)) + 10;
-    let x = d3.scaleBand(items.map((p) => p.id), [ml, w - mr]).padding(0.25);
-    const need = labW * Math.cos(rot) + 6 - x.bandwidth() / 2;
-    if (need > ml) { ml = need; x = d3.scaleBand(items.map((p) => p.id), [ml, w - mr]).padding(0.25); }
+    const ids = items.map((p) => p.id), nameOf = Object.fromEntries(items.map((p) => [p.id, p.name]));
+    const avail = (w - ml - mr) / ids.length - 8;
+    const wrap = measure(svg, items.flatMap((p) => p.name.split(/\s+/))) <= avail;
+    const lines = {};
+    let bottom, rot = 0;
+    if (wrap) {
+      for (const p of items) {
+        const out = [];
+        let cur = '';
+        for (const wd of p.name.split(/\s+/)) {
+          const t = cur ? `${cur} ${wd}` : wd;
+          if (cur && measure(svg, [t]) > avail) { out.push(cur); cur = wd; } else cur = t;
+        }
+        out.push(cur);
+        lines[p.id] = out;
+      }
+      bottom = d3.max(ids, (id) => lines[id].length) * 15 + 16;
+    } else {
+      rot = (40 * Math.PI) / 180;
+      bottom = Math.ceil(measure(svg, items.map((p) => p.name)) * Math.sin(rot)) + 22;
+    }
+    const h = plotH + bottom;
+    svg.attr('viewBox', `0 0 ${w} ${h}`).attr('height', h);
+    let x = d3.scaleBand(ids, [ml, w - mr]).padding(0.25);
+    if (rot) {
+      const need = measure(svg, items.map((p) => p.name)) * Math.cos(rot) + 6 - x.bandwidth() / 2;
+      if (need > ml) { ml = need; x = d3.scaleBand(ids, [ml, w - mr]).padding(0.25); }
+    }
     svg.append('g').selectAll('line').data(yR.ticks(4)).join('line')
       .attr('x1', ml).attr('x2', w - mr).attr('y1', yR).attr('y2', yR).attr('stroke', 'var(--cds-chart-grid)');
-    const short = { intro: 'Intro', probing: 'Probing', career: 'Career', need: 'Need map', fee: 'Fee', obj: 'Objection', closing: 'Closing', soft: 'Soft skills', dispo: 'Dispo' };
-    const ax = styleAxis(svg.append('g').attr('transform', `translate(0,${yMaxPx})`).call(d3.axisBottom(x).tickFormat((id) => short[id]).tickSizeOuter(0)));
-    ax.selectAll('text').attr('transform', 'rotate(-35)').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.6em');
+    const ax = styleAxis(svg.append('g').attr('transform', `translate(0,${yMaxPx})`).call(d3.axisBottom(x).tickFormat((id) => nameOf[id]).tickSizeOuter(0)));
+    if (rot) ax.selectAll('text').attr('transform', 'rotate(-40)').attr('text-anchor', 'end').attr('dx', '-0.4em').attr('dy', '0.6em');
+    else ax.selectAll('.tick text').each(function (id) {
+      const t = d3.select(this).text(null);
+      lines[id].forEach((ln, i) => t.append('tspan').attr('x', 0).attr('dy', i ? '1.2em' : null).text(ln));
+    });
     styleAxis(svg.append('g').attr('transform', `translate(${ml},0)`).call(d3.axisLeft(y).ticks(4).tickFormat(int))).select('.domain').remove();
     styleAxis(svg.append('g').attr('transform', `translate(${w - mr},0)`).call(d3.axisRight(yR).ticks(4).tickFormat(d3.format('.0%')))).select('.domain').remove();
     svg.append('line').attr('x1', ml).attr('x2', w - mr).attr('y1', yR(0.8)).attr('y2', yR(0.8)).attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 4');
@@ -1314,8 +1357,6 @@
     const g = c.getContext('2d');
     g.scale(scale, scale);
     g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H);
-    const logo = document.querySelector('.qa-logo');
-    if (logo && logo.complete) { g.save(); g.beginPath(); g.arc(W - pad - 20, pad + 18, 20, 0, Math.PI * 2); g.clip(); g.drawImage(logo, W - pad - 40, pad - 2, 40, 40); g.restore(); }
     g.fillStyle = '#4B3FCF'; g.font = `600 12px ${font}`; g.fillText('PW Skills · Counselling Quality', pad, pad + 8);
     g.fillStyle = '#121218'; g.font = `600 20px ${font}`; g.fillText(title, pad, pad + 34);
     g.fillStyle = '#5E5E6A'; g.font = `13px ${font}`; g.fillText(exportPeriod, pad, pad + 56);
@@ -1412,3 +1453,4 @@
   if (tabs.some((t) => t.dataset.tab === named)) show(named, false);
 })();
 </script>
+
